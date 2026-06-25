@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>WANDR - Itinerary</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&amp;family=Courier+Prime&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-fixed": "#b3ebff",
+                    "on-error": "#ffffff",
+                    "surface-tint": "#00677d",
+                    "on-secondary-container": "#6d0010",
+                    "outline": "#6d797e",
+                    "on-primary": "#ffffff",
+                    "on-primary-container": "#00414f",
+                    "surface-container-lowest": "#ffffff",
+                    "primary": "#00677d",
+                    "secondary": "#ae2f34",
+                    "error": "#ba1a1a",
+                    "outline-variant": "#bcc9ce",
+                    "secondary-fixed": "#ffdad8",
+                    "on-primary-fixed": "#001f27",
+                    "on-secondary-fixed-variant": "#8c1520",
+                    "on-secondary": "#ffffff",
+                    "inverse-primary": "#4cd6fb",
+                    "surface-dim": "#d5dbde",
+                    "on-tertiary-fixed": "#2f1500",
+                    "inverse-on-surface": "#ecf2f4",
+                    "tertiary": "#914d00",
+                    "surface-container": "#e9eff1",
+                    "primary-fixed-dim": "#4cd6fb",
+                    "secondary-fixed-dim": "#ffb3b0",
+                    "on-surface-variant": "#3d494d",
+                    "error-container": "#ffdad6",
+                    "on-surface": "#171c1f",
+                    "tertiary-container": "#eb8f3b",
+                    "surface-variant": "#dee3e6",
+                    "background": "#f5fafd",
+                    "surface-container-highest": "#dee3e6",
+                    "surface-bright": "#f5fafd",
+                    "surface-container-low": "#eff4f7",
+                    "surface": "#f5fafd",
+                    "on-secondary-fixed": "#410006",
+                    "primary-container": "#00b4d8",
+                    "on-tertiary-fixed-variant": "#6e3900",
+                    "on-tertiary-container": "#5d2f00",
+                    "inverse-surface": "#2b3134",
+                    "on-error-container": "#93000a",
+                    "on-tertiary": "#ffffff",
+                    "tertiary-fixed-dim": "#ffb77d",
+                    "secondary-container": "#ff6b6b",
+                    "tertiary-fixed": "#ffdcc3",
+                    "surface-container-high": "#e3e9ec",
+                    "on-background": "#171c1f",
+                    "on-primary-fixed-variant": "#004e5f"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "section-gap": "32px",
+                    "margin-desktop": "64px",
+                    "margin-mobile": "16px",
+                    "md": "16px",
+                    "lg": "24px",
+                    "xs": "4px",
+                    "sm": "12px",
+                    "base": "8px",
+                    "gutter": "16px",
+                    "card-padding": "24px",
+                    "xl": "32px"
+            },
+            "fontFamily": {
+                    "label-bold": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-xl": ["Inter"],
+                    "headline-sm": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "body-md": ["Inter"],
+                    "mono-data": ["Courier Prime"],
+                    "headline-lg-mobile": ["Inter"]
+            },
+            "fontSize": {
+                    "label-bold": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-xl": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "mono-data": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #f5fafd; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .timeline-line::before {
+            content: '';
+            position: absolute;
+            left: 11px;
+            top: 24px;
+            bottom: 0;
+            width: 2px;
+            background-color: #bcc9ce;
+        }
+        .glass-blur {
+            backdrop-filter: blur(10px);
+            background-color: rgba(255, 255, 255, 0.7);
+        }
+    </style>
+</head>
+<body class="text-on-surface">
+<!-- SideNavBar Shell -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-surface-container-low dark:bg-surface-container-lowest shadow-sm flex flex-col p-4 gap-2 z-50">
+<div class="mb-8 px-4">
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">WANDR</h1>
+<p class="font-label-bold text-label-bold text-on-surface-variant opacity-70">AI Travel Planner</p>
+</div>
+<nav class="flex flex-col gap-1 flex-1">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-lg group active:scale-95 duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined group-hover:text-primary">explore</span>
+<span class="font-body-md text-body-md">Plan</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-lg group active:scale-95 duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined group-hover:text-primary">flight</span>
+<span class="font-body-md text-body-md">Flights</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-lg group active:scale-95 duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined group-hover:text-primary">hotel</span>
+<span class="font-body-md text-body-md">Hotels</span>
+</a>
+<!-- Active Tab: Itinerary -->
+<a class="flex items-center gap-3 px-4 py-3 bg-primary-container dark:bg-primary-fixed text-on-primary-container dark:text-on-primary-fixed rounded-lg font-bold active:scale-95 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">event_note</span>
+<span class="font-body-md text-body-md">Itinerary</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-lg group active:scale-95 duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined group-hover:text-primary">payments</span>
+<span class="font-body-md text-body-md">Budget</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-high transition-colors rounded-lg group active:scale-95 duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined group-hover:text-primary">bookmark</span>
+<span class="font-body-md text-body-md">Saved</span>
+</a>
+</nav>
+<button class="mt-auto mx-2 py-3 px-4 bg-primary text-on-primary rounded-xl font-label-bold text-label-bold flex items-center justify-center gap-2 hover:opacity-90 transition-all active:scale-95">
+<span class="material-symbols-outlined" style="font-variation-settings: 'opsz' 20;">add</span>
+            New Trip
+        </button>
+</aside>
+<!-- TopAppBar Shell -->
+<header class="fixed top-0 right-0 left-64 h-16 bg-surface/80 dark:bg-surface-dim/80 backdrop-blur-md z-40">
+<div class="flex justify-between items-center px-8 w-full h-full">
+<div class="flex items-center gap-4 bg-surface-container-low px-4 py-2 rounded-full w-96">
+<span class="material-symbols-outlined text-on-surface-variant">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-md font-body-md w-full text-on-surface" placeholder="Search your itinerary..." type="text"/>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">settings</span>
+</div>
+<div class="w-10 h-10 rounded-full bg-cover bg-center border-2 border-primary-fixed cursor-pointer transition-transform hover:scale-105" data-alt="A professional headshot of a young male traveler with a friendly expression, wearing a stylish navy linen shirt. The background is a soft-focus urban setting in New Delhi with a vibrant teal and white light-mode aesthetic, matching the clean minimalist UI design." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBgNAJ13HD3ufNKKbnuDPW1YlcL6aPshWNvg4jptRkZvgo1bwa6Q61qUA3smG0ow6zr-me6Z5ZpnBLwB9em44j_CMjD9MNZSqkqN7vv6jXiHNzGpqw-Ro3fXaGGeTE1WafLTJutrbtdEoAJPEmG-SVL-Gg8Vy1dWLMPks0lhwzRgM4qwTjgQDVXdv6fRCspDHGg7FLQ273ikPgcuFafOIPJndyCZ2dViVaZ9UvnScEMJEizTpQVBH4DAju_Rv08PgRWZ5pl7Uxgggkj')">
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-24 px-8 pb-12 flex gap-8 min-h-screen">
+<!-- Itinerary Timeline -->
+<div class="flex-1 max-w-4xl">
+<header class="mb-12">
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-2">Day 1 — Delhi</h2>
+<div class="flex items-center gap-3">
+<span class="bg-primary-fixed text-on-primary-fixed-variant px-3 py-1 rounded-full font-label-bold text-label-bold">OCT 24, 2023</span>
+<span class="text-on-surface-variant font-body-md text-body-md">• 5 activities planned</span>
+</div>
+</header>
+<div class="relative timeline-line">
+<!-- Activity 1 -->
+<div class="mb-10 pl-10 relative"><div class="absolute left-0 top-1 w-6 h-6 rounded-full bg-primary flex items-center justify-center z-10 border-4 border-background"><div class="w-2 h-2 rounded-full bg-on-primary"></div></div><div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/30 hover:shadow-md transition-shadow group"><div class="flex justify-between items-start mb-2"><div><p class="text-primary font-label-bold text-label-bold mb-1">08:30 AM - 10:00 AM</p><h3 class="font-headline-sm text-headline-sm text-on-surface">Breakfast at Cafe Lota</h3></div><span class="material-symbols-outlined text-on-surface-variant opacity-40 group-hover:opacity-100 transition-opacity cursor-pointer">more_vert</span></div><p class="text-on-surface-variant font-body-md text-body-md mb-4 leading-relaxed">Regional Indian Specialities. Agent Reasoning: Chosen for its proximity to National Museum and high rating for authentic flavors.</p><div class="flex gap-2"><span class="px-3 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed-variant font-label-bold text-label-bold flex items-center gap-1"><span class="material-symbols-outlined" style="font-size: 14px;">restaurant</span>MEAL</span><span class="px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-bold text-label-bold">1h 30m</span></div></div><div class="mt-4 mb-4 flex items-center gap-3 text-on-surface-variant/60"><span class="material-symbols-outlined" style="font-size: 18px;">directions_car</span><p class="font-label-bold text-label-bold">15 min drive to IGI Airport</p></div></div><div class="mb-10 pl-10 relative">
+<!-- Timeline Dot -->
+<div class="absolute left-0 top-1 w-6 h-6 rounded-full bg-primary flex items-center justify-center z-10 border-4 border-background">
+<div class="w-2 h-2 rounded-full bg-on-primary"></div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/30 hover:shadow-md transition-shadow group">
+<div class="flex justify-between items-start mb-2">
+<div>
+<p class="text-primary font-label-bold text-label-bold mb-1">10:00 AM - 11:30 AM</p>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Arrival at IGI Airport</h3>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant opacity-40 group-hover:opacity-100 transition-opacity cursor-pointer">more_vert</span>
+</div>
+<p class="text-on-surface-variant font-body-md text-body-md mb-4 leading-relaxed">
+                            Terminal 3 arrival. Collect baggage and meet the pre-arranged chauffeur at Gate 4.
+                        </p>
+<div class="flex gap-2">
+<span class="px-3 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant font-label-bold text-label-bold flex items-center gap-1">
+<span class="material-symbols-outlined" style="font-size: 14px;">flight_land</span>
+                                FLIGHT
+                            </span>
+<span class="px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-bold text-label-bold">1h 30m</span></div>
+</div>
+<!-- Travel Time -->
+<div class="mt-4 mb-4 flex items-center gap-3 text-on-surface-variant/60">
+<span class="material-symbols-outlined" style="font-size: 18px;">directions_car</span>
+<p class="font-label-bold text-label-bold">45 min drive to Chanakyapuri</p>
+</div>
+</div>
+<!-- Activity 2 -->
+<div class="mb-10 pl-10 relative">
+<div class="absolute left-0 top-1 w-6 h-6 rounded-full bg-primary flex items-center justify-center z-10 border-4 border-background">
+<div class="w-2 h-2 rounded-full bg-on-primary"></div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/30 hover:shadow-md transition-shadow group">
+<div class="flex justify-between items-start mb-4">
+<div class="flex-1">
+<p class="text-primary font-label-bold text-label-bold mb-1">12:30 PM - 01:00 PM</p>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Check-in at The Leela Palace</h3>
+<p class="text-on-surface-variant font-body-md text-body-md mt-1">Diplomatic Enclave, Chanakyapuri, New Delhi</p>
+</div>
+<div class="w-24 h-24 rounded-lg bg-cover bg-center" data-alt="A luxurious hotel lobby with grand architecture, intricate Indian motifs, and elegant chandeliers. The lighting is warm and welcoming, capturing the sophisticated atmosphere of a high-end Delhi palace hotel. Minimalist framing with bright, clean light-mode accents." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCErzjB2aFRbHR22K0xwG0A1rbls21Y9iOo0MP9eDCTyM6oJy37agxSEFA-z7f10tqp-zS_Vu7zcr5JJLxzkuzbrAwgJsOGk0ZQwzykdNqadu-BiHVeQpAREG5ZAZFfk7AzZPF3HehjQYtIdmiAHuJHG1gXi8KD1_vzBsV9YgzTzH-YvixUfhUCLlNLATsGmq2qGATdPtD2_6RKZIkb4ipbQyICUnbXOfa5l0fJazqaLEBngU-A9wDuN7kQ0qY5b5F6wrGdzZw12QX3')">
+</div>
+</div>
+<div class="flex gap-2">
+<span class="px-3 py-1 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-bold text-label-bold flex items-center gap-1">
+<span class="material-symbols-outlined" style="font-size: 14px;">hotel</span>
+                                LODGING
+                            </span>
+<span class="px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-bold text-label-bold">PRE-PAID</span>
+<span class="px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-bold text-label-bold">30m</span></div>
+</div>
+<!-- Travel Time -->
+<div class="mt-4 mb-4 flex items-center gap-3 text-on-surface-variant/60">
+<span class="material-symbols-outlined" style="font-size: 18px;">directions_car</span>
+<p class="font-label-bold text-label-bold">30 min drive to Nizamuddin East</p>
+</div>
+</div><div class="mb-10 pl-10 relative"><div class="absolute left-0 top-1 w-6 h-6 rounded-full bg-primary flex items-center justify-center z-10 border-4 border-background"><div class="w-2 h-2 rounded-full bg-on-primary"></div></div><div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/30 hover:shadow-md transition-shadow group"><div class="flex justify-between items-start mb-2"><div><p class="text-primary font-label-bold text-label-bold mb-1">01:00 PM - 02:30 PM</p><h3 class="font-headline-sm text-headline-sm text-on-surface">Lunch at Indian Accent</h3></div><span class="material-symbols-outlined text-on-surface-variant opacity-40 group-hover:opacity-100 transition-opacity cursor-pointer">more_vert</span></div><p class="text-on-surface-variant font-body-md text-body-md mb-4 leading-relaxed">Modern Indian fine dining. Agent Reasoning: Award-winning restaurant located near the Lodhi area, perfect for a refined mid-day break.</p><div class="flex gap-2"><span class="px-3 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed-variant font-label-bold text-label-bold flex items-center gap-1"><span class="material-symbols-outlined" style="font-size: 14px;">restaurant</span>MEAL</span><span class="px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-bold text-label-bold">1h 30m</span></div></div><div class="mt-4 mb-4 flex items-center gap-3 text-on-surface-variant/60"><span class="material-symbols-outlined" style="font-size: 18px;">directions_car</span><p class="font-label-bold text-label-bold">15 min drive to Humayun's Tomb</p></div></div>
+<!-- Activity 3 -->
+<div class="mb-10 pl-10 relative">
+<div class="absolute left-0 top-1 w-6 h-6 rounded-full bg-primary flex items-center justify-center z-10 border-4 border-background">
+<div class="w-2 h-2 rounded-full bg-on-primary"></div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/30 hover:shadow-md transition-shadow group">
+<div class="flex justify-between items-start mb-2">
+<div>
+<p class="text-primary font-label-bold text-label-bold mb-1">03:00 PM - 05:00 PM</p>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Visit Humayun's Tomb</h3>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant opacity-40 group-hover:opacity-100 transition-opacity cursor-pointer">more_vert</span>
+</div>
+<p class="text-on-surface-variant font-body-md text-body-md mb-4 leading-relaxed">
+                            Explore the UNESCO World Heritage site. Recommended to stay until sunset for the best photography lighting on the red sandstone.
+                        </p>
+<div class="flex gap-2">
+<span class="px-3 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed-variant font-label-bold text-label-bold flex items-center gap-1">
+<span class="material-symbols-outlined" style="font-size: 14px;">museum</span>
+                                SIGHTSEEING
+                            </span>
+<span class="px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant font-label-bold text-label-bold">2h 0m</span></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Sidebar (Map & Stats) -->
+<aside class="w-80 flex flex-col gap-6">
+<!-- Weather Badge -->
+<div class="bg-primary-container text-on-primary-container p-6 rounded-2xl shadow-sm">
+<div class="flex justify-between items-center mb-4">
+<span class="font-label-bold text-label-bold opacity-80 uppercase tracking-widest">New Delhi Weather</span>
+<span class="material-symbols-outlined">wb_sunny</span>
+</div>
+<div class="flex items-end gap-2">
+<h4 class="text-4xl font-bold leading-none">28°C</h4>
+<span class="font-body-md text-body-md opacity-80 pb-1">Haze</span>
+</div>
+<p class="mt-4 font-body-md text-body-md">Clear skies expected for the evening. Ideal for outdoor photography.</p>
+</div>
+<!-- Mini Map -->
+<div class="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm border border-outline-variant/30 flex flex-col h-[450px]">
+<div class="p-4 border-b border-outline-variant/20 flex justify-between items-center bg-white/50">
+<h5 class="font-label-bold text-label-bold text-on-surface">Day 1 Route</h5>
+<span class="material-symbols-outlined text-primary cursor-pointer">open_in_new</span>
+</div>
+<div class="flex-1 relative bg-surface-container">
+<!-- Map Placeholder -->
+<div class="w-full h-full bg-cover bg-center" data-alt="A clean, minimalist vector map of New Delhi focusing on the Chanakyapuri and Nizamuddin areas. The map uses a soft teal and gray color palette, with elegant pins marking the IGI Airport, The Leela Palace, and Humayun's Tomb. The aesthetic is high-end, professional, and consistent with a modern travel AI interface." data-location="New Delhi, India" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBPStE6Hd6zGNQTZ42jKF6ej2IO_22lNuNk1CkKlkoYTRn_xg6seCiyFzbjHHLPuqCrJZhpjkJ-m21eQzMf9bE2sn-zldaB9Z1zXR0aiqF3yfSKWs_xTt5r55fYhvzWEmQjl6x5IgZDN_634s9wuRGylz2McBS-Hglx-V3v-FOIP8PwVrk_okS8EapFox7XW8qiXZv89Fb_5rZo6yodmT8aBoWsp4SB6Tnddrgu9YoamuBjNz6qMZZX4JQb-qN4c_7AOMNQxsuIY2qc')">
+</div>
+<!-- Map Overlay Buttons -->
+<div class="absolute bottom-4 right-4 flex flex-col gap-2">
+<button class="w-10 h-10 bg-white shadow-md rounded-full flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-colors">
+<span class="material-symbols-outlined">add</span>
+</button>
+<button class="w-10 h-10 bg-white shadow-md rounded-full flex items-center justify-center text-primary hover:bg-primary hover:text-white transition-colors">
+<span class="material-symbols-outlined">remove</span>
+</button>
+</div>
+</div>
+<div class="p-4 bg-white/50">
+<div class="flex items-center justify-between text-on-surface-variant font-label-bold text-label-bold">
+<span>Total Travel: 14km</span>
+<span>Est. Time: 1h 15m</span>
+</div>
+</div>
+</div>
+<!-- AI Suggestion Card -->
+<div class="border-2 border-dashed border-primary-container/50 p-6 rounded-2xl bg-primary-fixed/10">
+<div class="flex items-center gap-2 mb-3">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<h6 class="font-label-bold text-label-bold text-primary uppercase">AI AGENT TIP</h6>
+</div>
+<p class="text-on-surface-variant font-body-md text-body-md leading-relaxed">
+                    "Traffic in Delhi peaks around 5 PM. Consider leaving for Humayun's Tomb slightly earlier to catch the golden hour."
+                </p>
+</div>
+</aside>
+</main>
+<!-- Floating Action Button -->
+<button class="fixed bottom-8 right-8 w-16 h-16 bg-primary-container text-on-primary-container rounded-full shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 group">
+<span class="material-symbols-outlined text-3xl font-bold group-hover:rotate-90 transition-transform">add</span>
+</button>
+<script>
+        // Simple micro-interaction for cards
+        document.querySelectorAll('.bg-surface-container-lowest').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-2px)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0px)';
+            });
+        });
+    </script>
+</body></html>
