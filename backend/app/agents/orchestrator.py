@@ -46,22 +46,22 @@ class OrchestratorAgent(ADKAgent):
             return step_data
 
         try:
-            # 0. Weather Check (can run first/parallel)
+            # Phase 1: Run Weather, Flights, and Hotels IN PARALLEL (they are independent)
             yield yield_and_cache(f"data: {json.dumps({'event': 'agent_running', 'agent': 'WeatherAgent'})}\n\n")
-            weather_result = await self.send_message(self.weather_agent, request_payload)
-            yield yield_and_cache(f"data: {json.dumps({'event': 'agent_completed', 'agent': 'WeatherAgent', 'result': weather_result})}\n\n")
-
-            # 1. Flight Search
             yield yield_and_cache(f"data: {json.dumps({'event': 'agent_running', 'agent': 'FlightAgent'})}\n\n")
-            flight_result = await self.send_message(self.flight_agent, request_payload)
-            yield yield_and_cache(f"data: {json.dumps({'event': 'agent_completed', 'agent': 'FlightAgent', 'result': flight_result})}\n\n")
-            
-            # 2. Hotel Search
             yield yield_and_cache(f"data: {json.dumps({'event': 'agent_running', 'agent': 'HotelAgent'})}\n\n")
-            hotel_result = await self.send_message(self.hotel_agent, request_payload)
+
+            weather_result, flight_result, hotel_result = await asyncio.gather(
+                self.send_message(self.weather_agent, request_payload),
+                self.send_message(self.flight_agent, request_payload),
+                self.send_message(self.hotel_agent, request_payload),
+            )
+
+            yield yield_and_cache(f"data: {json.dumps({'event': 'agent_completed', 'agent': 'WeatherAgent', 'result': weather_result})}\n\n")
+            yield yield_and_cache(f"data: {json.dumps({'event': 'agent_completed', 'agent': 'FlightAgent', 'result': flight_result})}\n\n")
             yield yield_and_cache(f"data: {json.dumps({'event': 'agent_completed', 'agent': 'HotelAgent', 'result': hotel_result})}\n\n")
             
-            # 3. Itinerary Generation
+            # Phase 2: Itinerary Generation (depends on weather, flights, hotels)
             yield yield_and_cache(f"data: {json.dumps({'event': 'agent_running', 'agent': 'ItineraryAgent'})}\n\n")
             itinerary_payload = {
                 **request_payload, 
@@ -72,7 +72,7 @@ class OrchestratorAgent(ADKAgent):
             itinerary_result = await self.send_message(self.itinerary_agent, itinerary_payload)
             yield yield_and_cache(f"data: {json.dumps({'event': 'agent_completed', 'agent': 'ItineraryAgent', 'result': itinerary_result})}\n\n")
             
-            # 4. Budget Check
+            # Phase 3: Budget Check (depends on everything above)
             yield yield_and_cache(f"data: {json.dumps({'event': 'agent_running', 'agent': 'BudgetAgent'})}\n\n")
             budget_payload = {**itinerary_payload, "itinerary": itinerary_result}
             budget_result = await self.send_message(self.budget_agent, budget_payload)

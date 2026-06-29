@@ -88,16 +88,12 @@ class ItineraryAgent(ADKAgent):
         try:
             response = await loop.run_in_executor(None, _call_gemini)
             response_text = response.text
-            with open("itinerary_debug.log", "a") as f:
-                f.write("GEMINI PROMPT:\n" + prompt + "\nGEMINI RESPONSE:\n" + response_text + "\n\n")
             itinerary_plan = json.loads(response_text)
         except Exception as e:
             # Fallback to Groq
             if settings.groq_api_key:
                 try:
                     response_text = await loop.run_in_executor(None, _call_groq)
-                    with open("itinerary_debug.log", "a") as f:
-                        f.write("GROQ PROMPT:\n" + prompt + "\nGROQ RESPONSE:\n" + response_text + "\n\n")
                     # Strip markdown backticks if present
                     if response_text.startswith("```"):
                         response_text = response_text.split("```")[1]
@@ -110,13 +106,16 @@ class ItineraryAgent(ADKAgent):
             else:
                 return {"status": "error", "agent": self.name, "message": f"Gemini Error: {e} (Groq API Key missing for fallback)", "data": {}}
 
-        # Enrich with Google Places
+        # Enrich with real places data via Nominatim + Overpass
         for day in itinerary_plan.get("days", []):
             prev_location = None
             for activity in day.get("activities", []):
                 query = activity.get("search_query")
                 if query:
                     places = await self.places_provider.search_places(query)
+                    # Nominatim rate limit: max 1 request per second
+                    await asyncio.sleep(1.1)
+
                     if places:
                         top_place = places[0]
                         activity["place_details"] = {
@@ -131,32 +130,46 @@ class ItineraryAgent(ADKAgent):
                         
                         curr_location = top_place.get("location")
                         if prev_location and curr_location:
-                            travel_info = await self.places_provider.get_distance_and_time(
-                                prev_location["latitude"], prev_location["longitude"],
-                                curr_location["latitude"], curr_location["longitude"]
-                            )
-                            if travel_info:
-                                activity["travel_info"] = travel_info
+                            prev_lat = prev_location.get("latitude", 0)
+                            prev_lng = prev_location.get("longitude", 0)
+                            curr_lat = curr_location.get("latitude", 0)
+                            curr_lng = curr_location.get("longitude", 0)
+                            if prev_lat and curr_lat:
+                                travel_info = await self.places_provider.get_distance_and_time(
+                                    prev_lat, prev_lng, curr_lat, curr_lng
+                                )
+                                if travel_info:
+                                    activity["travel_info"] = travel_info
                         prev_location = curr_location
 
-                        if activity.get("type") == "MEAL":
-                            alt_query = f"Highly rated restaurants near {top_place.get('displayName', {}).get('text', destination)}"
-                            alt_places = await self.places_provider.search_places(alt_query)
-                            alternatives = []
-                            for alt in alt_places[1:4]:  # skip the first one as it might be the same
-                                alt_data = {
-                                    "name": alt.get("displayName", {}).get("text"),
-                                    "rating": alt.get("rating")
-                                }
-                                alt_photos = alt.get("photos", [])
-                                if alt_photos:
-                                    alt_data["photo_url"] = self.places_provider.get_photo_url(alt_photos[0].get("name"))
-                                alternatives.append(alt_data)
-                            if alternatives:
-                                activity["alternatives"] = alternatives
+                        # For MEAL activities, find real nearby restaurants via Overpass
+                        if activity.get("type") == "MEAL" and curr_location:
+                            lat = curr_location.get("latitude", 0)
+                            lon = curr_location.get("longitude", 0)
+                            if lat and lon:
+                                alt_places = await self.places_provider.search_nearby(lat, lon, "restaurant", 800)
+                                alternatives = []
+                                # Filter out the main place itself
+                                main_name = top_place.get("displayName", {}).get("text", "").lower()
+                                for alt in alt_places:
+                                    alt_name = alt.get("displayName", {}).get("text", "")
+                                    if alt_name.lower() != main_name:
+                                        alt_data = {
+                                            "name": alt_name,
+                                            "rating": alt.get("rating"),
+                                        }
+                                        alt_photos = alt.get("photos", [])
+                                        if alt_photos:
+                                            alt_data["photo_url"] = self.places_provider.get_photo_url(alt_photos[0].get("name"))
+                                        alternatives.append(alt_data)
+                                    if len(alternatives) >= 3:
+                                        break
+                                if alternatives:
+                                    activity["alternatives"] = alternatives
 
         return {
             "status": "success",
             "agent": self.name,
             "data": itinerary_plan
         }
+

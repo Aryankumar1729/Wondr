@@ -11,11 +11,12 @@ class HotelAgent(ADKAgent):
     async def process_message(self, message: A2AMessage) -> dict:
         payload = message.payload
         destination = payload.get("destination", "Mumbai")
-        # Ensure we have a valid check-in and check-out date
+        # Use actual trip dates
         check_in = payload.get("date", "2026-10-01")
+        duration = payload.get("duration", 2)
         try:
             date_obj = datetime.strptime(check_in, "%Y-%m-%d")
-            check_out = (date_obj + timedelta(days=2)).strftime("%Y-%m-%d")
+            check_out = (date_obj + timedelta(days=max(duration, 1))).strftime("%Y-%m-%d")
         except:
             check_out = "2026-10-03"
 
