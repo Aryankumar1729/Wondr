@@ -8,33 +8,44 @@ class BudgetAgent(ADKAgent):
     async def process_message(self, message: A2AMessage) -> dict:
         payload = message.payload
         budget = float(payload.get("budget", 50000.0))
+        adults = int(payload.get("adults", 1))
+        duration = int(payload.get("duration", 2))
         
         flights = payload.get("flights", {}).get("data", [])
         hotels = payload.get("hotels", {}).get("data", [])
 
-        total_cost = 0.0
-        
+        # 1. Flights (Multiply by adults)
+        flight_cost = 0.0
         if flights:
             try:
                 price_str = str(flights[0].get("price", "0")).replace("INR", "").replace("₹", "").replace(",", "").strip()
-                total_cost += float(price_str)
+                flight_cost = float(price_str) * adults
             except ValueError:
                 pass
 
+        # 2. Hotels (Multiply by nights)
+        hotel_cost = 0.0
         if hotels:
             try:
                 price_str = str(hotels[0].get("price", "0")).replace("INR", "").replace("₹", "").replace(",", "").strip()
-                total_cost += float(price_str)
+                nights = max(1, duration - 1)
+                hotel_cost = float(price_str) * nights
             except ValueError:
                 pass
 
+        # 3. Estimated Itinerary Costs (Food, Transit, Activities)
+        # Roughly ₹2500 per person per day
+        daily_expense_per_person = 2500.0
+        itinerary_cost = daily_expense_per_person * adults * duration
+
+        total_cost = flight_cost + hotel_cost + itinerary_cost
         feasible = total_cost <= budget
         remaining = budget - total_cost
 
         if feasible:
-            suggestion = f"Great! Your trip looks feasible. Flights and Hotels will cost approximately ₹{total_cost:,.2f}, leaving ₹{remaining:,.2f} for your daily itinerary and food."
+            suggestion = f"Great! Your trip looks feasible. Flights (₹{flight_cost:,.0f}) and Hotels (₹{hotel_cost:,.0f}) take up the bulk, with estimated ₹{itinerary_cost:,.0f} for daily food and activities. You are under budget by ₹{remaining:,.2f}."
         else:
-            suggestion = f"Warning: The current flights and hotels (₹{total_cost:,.2f}) exceed your budget of ₹{budget:,.2f} by ₹{abs(remaining):,.2f}. Consider modifying your dates or selecting cheaper options."
+            suggestion = f"Warning: The estimated total (₹{total_cost:,.0f}) exceeds your budget of ₹{budget:,.0f} by ₹{abs(remaining):,.0f}. Try selecting cheaper dates or reducing the duration."
 
         return {
             "status": "success",
