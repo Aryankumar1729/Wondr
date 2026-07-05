@@ -98,12 +98,16 @@ export default function ItineraryPage() {
                         {/* Content */}
                         <div className="flex-1">
                           <div className="flex items-baseline gap-2 mb-0.5">
-                            <h4 className="text-sm font-bold text-gray-900 leading-tight">{activity.activity || activity.name}</h4>
+                            <h4 className="text-sm font-bold text-gray-900 leading-tight">
+                              {activity.title || activity.activity || activity.name || (activity.place_details && activity.place_details.name)}
+                            </h4>
                             <span className="text-[10px] font-bold text-gray-400 flex items-center gap-0.5">
                               <span className="material-symbols-outlined text-[10px]">schedule</span> {time}
                             </span>
                           </div>
-                          <p className="text-[11px] text-gray-500 leading-tight line-clamp-1">{activity.description || "Activity description"}</p>
+                          <p className="text-[11px] text-gray-500 leading-tight line-clamp-1">
+                            {activity.description || activity.search_query || (activity.place_details && activity.place_details.address) || "Activity description"}
+                          </p>
                           
                           {/* Tags */}
                           <div className="flex gap-2 mt-2">
@@ -209,17 +213,23 @@ export default function ItineraryPage() {
           
           <div className="flex flex-col gap-4">
             {/* Flatten all activities for the places list */}
-            {days.flatMap(d => d.activities).map((activity: any, idx: number) => (
+            {days.flatMap(d => d.activities || []).map((activity: any, idx: number) => (
               <div key={idx} className="flex gap-3 group cursor-pointer hover:bg-gray-50 p-2 -mx-2 rounded-lg transition-colors">
                 <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden shrink-0 border border-gray-200 flex items-center justify-center">
-                  <img src="https://images.unsplash.com/photo-1542051812871-757500850028?w=100&h=100&fit=crop" className="w-full h-full object-cover" />
+                  {activity.place_details?.photo_url ? (
+                    <img src={activity.place_details.photo_url} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="material-symbols-outlined text-gray-400">landscape</span>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <h4 className="text-sm font-bold text-gray-900 truncate flex items-center gap-1">
                     <span className="material-symbols-outlined text-[12px] text-purple-500">location_on</span>
-                    {activity.activity || activity.name}
+                    {activity.title || activity.activity || activity.name || (activity.place_details && activity.place_details.name)}
                   </h4>
-                  <p className="text-[11px] text-gray-500 truncate mt-0.5">{activity.description || "Location details"}</p>
+                  <p className="text-[11px] text-gray-500 truncate mt-0.5">
+                    {(activity.place_details && activity.place_details.address) || activity.description || activity.search_query || "Location details"}
+                  </p>
                 </div>
               </div>
             ))}
