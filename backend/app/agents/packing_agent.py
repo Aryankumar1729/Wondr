@@ -1,16 +1,14 @@
 import asyncio
 import logging
-from google import genai
-from app.config import settings
-from app.agents.base_agent import ADKAgent, A2AMessage
 import json
+from app.agents.base_agent import ADKAgent, A2AMessage
+from app.services.llm_service import llm_service
 
 logger = logging.getLogger(__name__)
 
 class PackingAgent(ADKAgent):
     def __init__(self):
         super().__init__("PackingAgent")
-        self.gemini_client = genai.Client(api_key=settings.gemini_api_key) if settings.gemini_api_key else None
 
     async def process_message(self, message: A2AMessage) -> dict:
         payload = message.payload
@@ -24,9 +22,6 @@ class PackingAgent(ADKAgent):
         # Determine general climate
         temp = weather_data.get("temp", 25)
         condition = weather_data.get("condition", "Clear")
-
-        if not self.gemini_client:
-            return {"status": "error", "agent": self.name, "message": "GEMINI_API_KEY is missing", "data": {}}
 
         prompt = f"""
         You are a highly intelligent travel assistant generating a smart packing list for a trip to {destination}.
@@ -64,16 +59,8 @@ class PackingAgent(ADKAgent):
         """
 
         try:
-            loop = asyncio.get_running_loop()
-            
-            def _call_llm():
-                return self.gemini_client.models.generate_content(
-                    model='gemini-2.5-flash',
-                    contents=prompt
-                )
-                
-            response = await loop.run_in_executor(None, _call_llm)
-            raw_text = response.text.replace("```json", "").replace("```", "").strip()
+            raw_text = await llm_service.chat(prompt)
+            raw_text = raw_text.replace("```json", "").replace("```", "").strip()
             
             try:
                 packing_data = json.loads(raw_text)
