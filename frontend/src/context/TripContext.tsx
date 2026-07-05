@@ -13,6 +13,7 @@ interface TripData {
   flights: any[];
   hotels: any[];
   itinerary: any;
+  packing: any;
   budgetResult: any;
   mapMarkers: any[];
   mapCenter: { lat: number; lng: number };
@@ -34,6 +35,7 @@ const defaultTrip: TripData = {
   flights: [],
   hotels: [],
   itinerary: null,
+  packing: null,
   budgetResult: null,
   mapMarkers: [],
   mapCenter: { lat: 19.076, lng: 72.8777 },

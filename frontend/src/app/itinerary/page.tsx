@@ -294,6 +294,36 @@ export default function ItineraryPage() {
           })}
       </div>
 
+      {/* AI Smart Packing List */}
+      {tripData.packing && tripData.packing.categories && (
+        <div className="mt-12 animate-slide-up">
+          <div className="flex items-center gap-3 mb-6">
+            <span className="material-symbols-outlined text-primary text-3xl">work</span>
+            <h2 className="text-2xl font-bold text-on-surface tracking-tight">Smart Packing List</h2>
+            <div className="ml-auto flex items-center gap-2 px-3 py-1 bg-primary-container text-on-primary-container rounded-full text-xs font-bold">
+              <span className="material-symbols-outlined text-[14px]">auto_awesome</span>
+              AI Generated
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {tripData.packing.categories.map((cat: any, idx: number) => (
+              <div key={idx} className="bg-surface-container-lowest rounded-2xl border border-outline-variant/30 p-5 shadow-sm hover:shadow-md transition-shadow">
+                <h3 className="text-sm font-bold text-primary tracking-wider uppercase mb-4 border-b border-outline-variant/30 pb-2">{cat.name}</h3>
+                <ul className="space-y-2">
+                  {cat.items.map((item: string, i: number) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-on-surface">
+                      <input type="checkbox" className="mt-1 accent-primary w-4 h-4 rounded-sm border-outline-variant" />
+                      <span className="leading-tight">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Summary Footer */}
       <div className="bg-surface-container-lowest rounded-xl border border-outline-variant/50 p-5 flex items-center justify-between">
         <div className="flex items-center gap-3">

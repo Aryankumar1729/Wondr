@@ -8,6 +8,7 @@ from app.agents.hotel_agent import HotelAgent
 from app.agents.itinerary_agent import ItineraryAgent
 from app.agents.budget_agent import BudgetAgent
 from app.agents.weather_agent import WeatherAgent
+from app.agents.packing_agent import PackingAgent
 
 # In-memory cache for Phase 5 (Key: payload hash, Value: list of SSE messages)
 # Note: Caching can cause stale data if the underlying agent logic is updated!
@@ -21,6 +22,7 @@ class OrchestratorAgent(ADKAgent):
         self.itinerary_agent = ItineraryAgent()
         self.budget_agent = BudgetAgent()
         self.weather_agent = WeatherAgent()
+        self.packing_agent = PackingAgent()
 
     def _generate_cache_key(self, request_payload: dict) -> str:
         payload_str = json.dumps(request_payload, sort_keys=True)
@@ -61,20 +63,28 @@ class OrchestratorAgent(ADKAgent):
             yield yield_and_cache(f"data: {json.dumps({'event': 'agent_completed', 'agent': 'FlightAgent', 'result': flight_result})}\n\n")
             yield yield_and_cache(f"data: {json.dumps({'event': 'agent_completed', 'agent': 'HotelAgent', 'result': hotel_result})}\n\n")
             
-            # Phase 2: Itinerary Generation (depends on weather, flights, hotels)
+            # Phase 2: Itinerary and Packing Generation (depends on weather, flights, hotels)
             yield yield_and_cache(f"data: {json.dumps({'event': 'agent_running', 'agent': 'ItineraryAgent'})}\n\n")
-            itinerary_payload = {
+            yield yield_and_cache(f"data: {json.dumps({'event': 'agent_running', 'agent': 'PackingAgent'})}\n\n")
+            
+            phase2_payload = {
                 **request_payload, 
                 "flights": flight_result, 
                 "hotels": hotel_result,
                 "weather": weather_result
             }
-            itinerary_result = await self.send_message(self.itinerary_agent, itinerary_payload)
+            
+            itinerary_result, packing_result = await asyncio.gather(
+                self.send_message(self.itinerary_agent, phase2_payload),
+                self.send_message(self.packing_agent, phase2_payload)
+            )
+            
             yield yield_and_cache(f"data: {json.dumps({'event': 'agent_completed', 'agent': 'ItineraryAgent', 'result': itinerary_result})}\n\n")
+            yield yield_and_cache(f"data: {json.dumps({'event': 'agent_completed', 'agent': 'PackingAgent', 'result': packing_result})}\n\n")
             
             # Phase 3: Budget Check (depends on everything above)
             yield yield_and_cache(f"data: {json.dumps({'event': 'agent_running', 'agent': 'BudgetAgent'})}\n\n")
-            budget_payload = {**itinerary_payload, "itinerary": itinerary_result}
+            budget_payload = {**phase2_payload, "itinerary": itinerary_result, "packing": packing_result}
             budget_result = await self.send_message(self.budget_agent, budget_payload)
             yield yield_and_cache(f"data: {json.dumps({'event': 'agent_completed', 'agent': 'BudgetAgent', 'result': budget_result})}\n\n")
 

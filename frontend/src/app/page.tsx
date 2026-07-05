@@ -131,6 +131,9 @@ export default function Home() {
                   setHotels(data.result.data || []);
                   setTripData({ hotels: data.result.data || [] });
                 }
+                if (data.agent === "PackingAgent") {
+                  setTripData({ packing: data.result.data });
+                }
                 if (data.agent === "ItineraryAgent") {
                   setItinerary(data.result.data);
                   setTripData({ itinerary: data.result.data });
