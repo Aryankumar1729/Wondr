@@ -12,7 +12,7 @@ export function Sidebar() {
     { name: "Hotels", href: "/hotels", icon: "hotel" },
     { name: "Itinerary", href: "/itinerary", icon: "event_note" },
     { name: "Budget", href: "/budget", icon: "payments" },
-    { name: "Saved", href: "#", icon: "bookmark" },
+    { name: "Saved", href: "/trips", icon: "bookmark" },
   ];
 
   return (
