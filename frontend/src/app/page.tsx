@@ -14,6 +14,7 @@ export default function Home() {
   const [budget, setBudget] = useState("50000");
   
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
   const [weather, setWeather] = useState<any>(null);
   const [flights, setFlights] = useState<any[]>([]);
@@ -31,6 +32,43 @@ export default function Home() {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
+
+    // Validation Rules
+    if (!origin.trim() || !destination.trim()) {
+      setFormError("Origin and Destination cannot be empty.");
+      return;
+    }
+
+    const start = new Date(departureDate);
+    const end = new Date(arrivalDate);
+    
+    // Set time to midnight for accurate day comparison
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (start < today) {
+      setFormError("Departure date cannot be in the past.");
+      return;
+    }
+    
+    if (end < start) {
+      setFormError("Arrival date must be on or after the departure date.");
+      return;
+    }
+
+    const numericBudget = parseFloat(budget);
+    if (isNaN(numericBudget) || numericBudget <= 0) {
+      setFormError("Budget must be a valid positive number.");
+      return;
+    }
+
+    const numAdults = parseInt(adults);
+    if (isNaN(numAdults) || numAdults < 1) {
+      setFormError("There must be at least 1 adult traveling.");
+      return;
+    }
+
     setLoading(true);
     setLogs([]);
     setWeather(null);
@@ -39,10 +77,8 @@ export default function Home() {
     setItinerary(null);
     setBudgetResult(null);
     setMapMarkers([]);
-    setTripData({ origin, destination, departureDate, arrivalDate, adults: parseInt(adults), budget: parseFloat(budget) });
+    setTripData({ origin, destination, departureDate, arrivalDate, adults: numAdults, budget: numericBudget });
 
-    const start = new Date(departureDate);
-    const end = new Date(arrivalDate);
     const diffTime = Math.abs(end.getTime() - start.getTime());
     // Adding 1 to include both start and end days
     const durationDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1 || 1;
@@ -176,6 +212,13 @@ export default function Home() {
               {loading ? <span className="material-symbols-outlined animate-spin">refresh</span> : "Generate"}
             </button>
           </form>
+
+          {formError && (
+            <div className="mt-4 p-4 bg-error-container text-on-error-container rounded-xl flex items-center gap-3 animate-fade-in border border-error/20">
+              <span className="material-symbols-outlined">error</span>
+              <span className="text-sm font-bold">{formError}</span>
+            </div>
+          )}
         </div>
 
         {/* Loading Skeletons */}
