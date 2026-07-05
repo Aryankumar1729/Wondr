@@ -30,6 +30,35 @@ export default function ItineraryPage() {
     days.length > 0 ? 0 : null
   );
 
+  const [saving, setSaving] = useState(false);
+
+  const handleSaveTrip = async () => {
+    setSaving(true);
+    try {
+      const payload = {
+        origin: tripData.origin || "",
+        destination: tripData.destination || "",
+        departure_date: tripData.departureDate || "",
+        arrival_date: tripData.arrivalDate || "",
+        adults: tripData.adults || 1,
+        budget: tripData.budget || 50000,
+        trip_data: tripData
+      };
+      const res = await fetch("http://localhost:8000/api/trips/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error("Failed to save trip");
+      alert("Trip saved successfully!");
+    } catch (err) {
+      console.error(err);
+      alert("Error saving trip");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (!itinerary || days.length === 0) {
     return (
       <div className="max-w-5xl mx-auto w-full animate-fade-in">
@@ -335,9 +364,19 @@ export default function ItineraryPage() {
             tapping on any card.
           </p>
         </div>
-        <button className="text-xs font-bold text-primary hover:underline">
-          Regenerate
-        </button>
+        <div className="flex gap-4">
+          <button 
+            onClick={handleSaveTrip}
+            disabled={saving}
+            className="text-xs font-bold bg-primary text-on-primary px-4 py-2 rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center gap-2"
+          >
+            {saving ? <span className="material-symbols-outlined animate-spin text-[16px]">refresh</span> : <span className="material-symbols-outlined text-[16px]">save</span>}
+            Save Trip
+          </button>
+          <button className="text-xs font-bold text-primary hover:underline self-center">
+            Regenerate
+          </button>
+        </div>
       </div>
     </div>
   );
