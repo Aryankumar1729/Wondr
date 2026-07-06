@@ -1,4 +1,5 @@
 import asyncio
+import requests
 from app.agents.base_agent import ADKAgent, A2AMessage
 
 class BudgetAgent(ADKAgent):
@@ -47,6 +48,27 @@ class BudgetAgent(ADKAgent):
         else:
             suggestion = f"Warning: The estimated total (₹{total_cost:,.0f}) exceeds your budget of ₹{budget:,.0f} by ₹{abs(remaining):,.0f}. Try selecting cheaper dates or reducing the duration."
 
+        # 4. Currency conversions via Frankfurter API
+        currency_conversions = {}
+        try:
+            resp = requests.get(
+                "https://api.frankfurter.dev/latest",
+                params={"from": "INR", "to": "USD,EUR,GBP"},
+                timeout=5,
+            )
+            resp.raise_for_status()
+            rates = resp.json().get("rates", {})
+            usd_rate = rates.get("USD", 0)
+            eur_rate = rates.get("EUR", 0)
+            gbp_rate = rates.get("GBP", 0)
+            currency_conversions = {
+                "USD": round(total_cost * usd_rate, 2),
+                "EUR": round(total_cost * eur_rate, 2),
+                "GBP": round(total_cost * gbp_rate, 2),
+            }
+        except Exception:
+            currency_conversions = {}
+
         return {
             "status": "success",
             "agent": self.name,
@@ -54,6 +76,12 @@ class BudgetAgent(ADKAgent):
                 "feasible": feasible,
                 "total_cost": total_cost,
                 "remaining_budget": remaining,
-                "suggestion": suggestion
+                "suggestion": suggestion,
+                "breakdown": {
+                    "flights": flight_cost,
+                    "hotels": hotel_cost,
+                    "daily_expenses": itinerary_cost,
+                },
+                "currency_conversions": currency_conversions,
             }
         }

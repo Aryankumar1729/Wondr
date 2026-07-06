@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTripData } from "@/context/TripContext";
 import Link from "next/link";
+import CurrencyWidget from "@/components/CurrencyWidget";
+import HolidaysWidget from "@/components/HolidaysWidget";
 
 export default function MyTripsDashboard() {
   const [trips, setTrips] = useState<any[]>([]);
@@ -42,6 +44,24 @@ export default function MyTripsDashboard() {
     "from-[#56CCF2] to-[#2F80ED]", // Light Blue to Deep Blue
   ];
 
+  // Dynamic calculations
+  const totalTrips = trips.length;
+  
+  const totalPlaces = trips.reduce((acc, trip) => {
+    const days = trip.trip_data?.itinerary?.days || [];
+    const activitiesCount = days.reduce((dAcc: number, day: any) => dAcc + (day.activities?.length || 0), 0);
+    return acc + activitiesCount;
+  }, 0);
+
+  const totalDays = trips.reduce((acc, trip) => {
+    const depDate = new Date(trip.departure_date);
+    const arrDate = new Date(trip.arrival_date);
+    const daysDiff = Math.max(1, Math.ceil((arrDate.getTime() - depDate.getTime()) / (1000 * 3600 * 24)));
+    return acc + daysDiff;
+  }, 0);
+
+  const estimatedKm = totalPlaces * 24;
+
   return (
     <div className="flex flex-col gap-8 text-[#111827] pt-24 px-8 pb-12 max-w-[1400px] mx-auto">
       {/* Top Stats Row */}
@@ -49,20 +69,20 @@ export default function MyTripsDashboard() {
         <div className="bg-[#1C1C1E] text-white rounded-[24px] p-6 shadow-sm flex flex-col justify-between h-40">
           <div>
             <div className="flex items-baseline gap-2">
-              <h2 className="text-5xl font-bold tracking-tight">3</h2>
-              <span className="text-gray-400 font-medium">of 195</span>
+              <h2 className="text-5xl font-bold tracking-tight">{totalTrips}</h2>
+              <span className="text-gray-400 font-medium">trips planned</span>
             </div>
           </div>
           <div className="flex -space-x-2">
-            <div className="w-8 h-8 rounded-full bg-red-600 border-2 border-[#1C1C1E] z-10 flex items-center justify-center text-[10px]">🇦🇫</div>
-            <div className="w-8 h-8 rounded-full bg-white border-2 border-[#1C1C1E] z-0 flex items-center justify-center text-[10px]">🇯🇵</div>
+            <div className="w-8 h-8 rounded-full bg-red-600 border-2 border-[#1C1C1E] z-10 flex items-center justify-center text-[10px]">📍</div>
+            <div className="w-8 h-8 rounded-full bg-white border-2 border-[#1C1C1E] z-0 flex items-center justify-center text-[10px]">🌍</div>
           </div>
         </div>
         
         <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col justify-between h-40 relative overflow-hidden">
           <div>
-            <h2 className="text-5xl font-bold tracking-tight text-gray-900">5</h2>
-            <span className="text-gray-500 font-medium text-sm mt-1 block">15 places mapped</span>
+            <h2 className="text-5xl font-bold tracking-tight text-gray-900">{totalPlaces}</h2>
+            <span className="text-gray-500 font-medium text-sm mt-1 block">places mapped</span>
           </div>
           <svg className="absolute bottom-4 right-4 w-16 h-8 text-gray-400" viewBox="0 0 100 40" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M0 30 L20 35 L40 20 L60 25 L80 10 L100 5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -72,7 +92,7 @@ export default function MyTripsDashboard() {
         <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col justify-between h-40 relative overflow-hidden">
           <div>
             <div className="flex items-baseline gap-2">
-              <h2 className="text-5xl font-bold tracking-tight text-gray-900">43</h2>
+              <h2 className="text-5xl font-bold tracking-tight text-gray-900">{totalDays}</h2>
               <span className="text-gray-500 font-medium text-lg">days</span>
             </div>
             <span className="text-gray-500 font-medium text-sm mt-1 block">across all trips</span>
@@ -85,10 +105,10 @@ export default function MyTripsDashboard() {
         <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col justify-between h-40 relative overflow-hidden">
           <div>
             <div className="flex items-baseline gap-2">
-              <h2 className="text-5xl font-bold tracking-tight text-gray-900">0</h2>
+              <h2 className="text-5xl font-bold tracking-tight text-gray-900">{estimatedKm}</h2>
               <span className="text-gray-500 font-medium text-lg">km</span>
             </div>
-            <span className="text-gray-500 font-medium text-sm mt-1 block w-2/3 leading-tight">≈ 0.00× around the equator</span>
+            <span className="text-gray-500 font-medium text-sm mt-1 block w-2/3 leading-tight">≈ {(estimatedKm / 40075).toFixed(4)}× around the equator</span>
           </div>
           <div className="absolute bottom-4 right-6 w-8 h-8 rounded-full border-2 border-gray-200 border-t-gray-400 transform -rotate-45"></div>
         </div>
@@ -186,39 +206,13 @@ export default function MyTripsDashboard() {
         {/* Right Side: Widgets Column */}
         <div className="w-80 flex flex-col gap-6">
           
-          {/* Currency Widget */}
-          <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100">
-            <div className="flex justify-between items-center mb-6 text-gray-500 text-xs font-bold tracking-widest">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[16px]">currency_exchange</span>
-                CURRENCY
-              </div>
-              <span className="material-symbols-outlined text-[16px] cursor-pointer hover:text-gray-900">sync</span>
-            </div>
+          <CurrencyWidget />
 
-            <div className="flex items-center gap-3 relative">
-              <div className="flex-1 bg-[#F9F9F9] rounded-2xl p-4 border border-gray-100">
-                <p className="text-[10px] font-bold text-gray-400 tracking-widest mb-1">FROM</p>
-                <p className="text-3xl font-bold text-gray-900 mb-2">100</p>
-                <div className="flex items-center justify-between text-sm font-semibold text-gray-900 border border-gray-200 bg-white rounded-lg px-2 py-1">
-                  EUR <span className="material-symbols-outlined text-[16px] text-gray-400">expand_more</span>
-                </div>
-              </div>
-              
-              <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-[#1C1C1E] rounded-full flex items-center justify-center text-white shadow-md z-10 border-2 border-white">
-                <span className="material-symbols-outlined text-[14px]">swap_horiz</span>
-              </div>
-
-              <div className="flex-1 bg-[#F9F9F9] rounded-2xl p-4 border border-gray-100">
-                <p className="text-[10px] font-bold text-gray-400 tracking-widest mb-1">TO</p>
-                <p className="text-3xl font-bold text-gray-900 mb-2">114.46</p>
-                <div className="flex items-center justify-between text-sm font-semibold text-gray-900 border border-gray-200 bg-white rounded-lg px-2 py-1">
-                  USD <span className="material-symbols-outlined text-[16px] text-gray-400">expand_more</span>
-                </div>
-              </div>
-            </div>
-            <p className="text-[11px] font-medium text-gray-500 mt-4 text-center">1 EUR = 1.1446 USD</p>
-          </div>
+          <HolidaysWidget 
+            destination={trips[0]?.destination} 
+            startDate={trips[0]?.departure_date} 
+            endDate={trips[0]?.arrival_date} 
+          />
 
           {/* Timezones Widget */}
           <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100">
@@ -264,17 +258,6 @@ export default function MyTripsDashboard() {
                 <p className="text-xl font-bold text-gray-900">19:58</p>
               </div>
             </div>
-          </div>
-
-          {/* Upcoming Reservations */}
-          <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100">
-            <div className="flex justify-between items-center mb-6 text-gray-500 text-xs font-bold tracking-widest">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[16px]">calendar_month</span>
-                UPCOMING RESERVATIONS
-              </div>
-            </div>
-            <p className="text-sm text-gray-600 font-medium pb-2">Nothing booked yet.</p>
           </div>
 
         </div>

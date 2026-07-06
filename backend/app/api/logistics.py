@@ -1,7 +1,8 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from pydantic import BaseModel
 from typing import List, Optional
 from app.services.serpapi_service import serpapi_service
+from app.services.holiday_service import holiday_service
 import asyncio
 
 router = APIRouter()
@@ -48,3 +49,12 @@ async def get_logistics(request: LogisticsRequest):
     flights, hotels = await asyncio.gather(flights_task, hotels_task)
     
     return LogisticsResponse(flights=flights, hotels=hotels)
+
+@router.get("/holidays")
+async def get_holidays_endpoint(
+    destination: str = Query(..., description="Destination name (e.g. 'Japan')"),
+    start_date: str = Query(..., description="Start date YYYY-MM-DD"),
+    end_date: str = Query(..., description="End date YYYY-MM-DD")
+):
+    holidays = await holiday_service.get_holidays(destination, start_date, end_date)
+    return {"status": "success", "data": holidays}

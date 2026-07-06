@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTripData } from "@/context/TripContext";
+import toast from "react-hot-toast";
 
 export function TopNav() {
   const pathname = usePathname();
@@ -11,7 +12,7 @@ export function TopNav() {
   const globalNavLinks = [
     { name: "My Trips", href: "/trips", icon: "luggage" },
     { name: "Plan", href: "/", icon: "explore" },
-    { name: "Atlas", href: "#", icon: "public" },
+    { name: "Atlas", href: "#", icon: "public", onClick: (e: any) => { e.preventDefault(); toast("Atlas view coming soon!", { icon: "🌍" }); } },
     { name: "Journey", href: "/itinerary", icon: "map" }
   ];
 
@@ -25,6 +26,8 @@ export function TopNav() {
       { name: "Book", href: "/hotels", icon: "hotel" },
       { name: "Lists", href: "/lists", icon: "list_alt" },
       { name: "Costs", href: "/budget", icon: "payments" },
+      { name: "Files", href: "#", icon: "folder", onClick: (e: any) => { e.preventDefault(); toast("Files coming soon!", { icon: "📁" }); } },
+      { name: "Collab", href: "#", icon: "group", onClick: (e: any) => { e.preventDefault(); toast("Collaboration coming soon!", { icon: "👥" }); } }
     ];
 
     return (
@@ -39,10 +42,9 @@ export function TopNav() {
             </Link>
             <div className="h-5 w-[1px] bg-gray-300"></div>
             <div className="flex items-center gap-2">
-              <span className="flex text-black font-black text-lg tracking-widest items-center">
-                <span className="material-symbols-outlined text-primary mr-1 text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>public</span>
-                WANDR
-              </span>
+              <Link href="/" className="flex items-center">
+                <img src="/assets/logo.png" alt="WANDR" className="h-6 w-auto object-contain" />
+              </Link>
               <span className="text-gray-400 font-light mx-1">/</span>
               <span className="text-gray-800 font-semibold text-sm tracking-wide">
                 {tripData?.destination || "New Trip"}
@@ -52,17 +54,29 @@ export function TopNav() {
 
           {/* Right Controls */}
           <div className="flex items-center gap-4 text-gray-500">
-            <button className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-semibold hover:bg-gray-50 text-gray-700 transition-colors bg-white">
+            <button 
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-semibold hover:bg-gray-50 text-gray-700 transition-colors bg-white"
+              onClick={() => toast.success("Trip link copied to clipboard!")}
+            >
               <span className="material-symbols-outlined text-[16px]">group_add</span>
               Share
             </button>
-            <button className="material-symbols-outlined text-[20px] hover:text-black transition-colors ml-2">
+            <button 
+              className="material-symbols-outlined text-[20px] hover:text-black transition-colors ml-2"
+              onClick={() => toast("Dark mode coming in v2!", { icon: "🌙" })}
+            >
               dark_mode
             </button>
-            <button className="material-symbols-outlined text-[20px] hover:text-black transition-colors">
+            <button 
+              className="material-symbols-outlined text-[20px] hover:text-black transition-colors"
+              onClick={() => toast("No new notifications", { icon: "🔔" })}
+            >
               notifications
             </button>
-            <div className="flex items-center gap-2 ml-2 cursor-pointer group">
+            <div 
+              className="flex items-center gap-2 ml-2 cursor-pointer group"
+              onClick={() => toast("Profile settings coming soon!", { icon: "⚙️" })}
+            >
               <div className="w-7 h-7 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold">
                 D
               </div>
@@ -80,11 +94,12 @@ export function TopNav() {
         <div className="h-12 border-b border-gray-200 flex items-center justify-center bg-white">
           <nav className="flex gap-2">
             {tripNavLinks.map((link) => {
-              const isActive = pathname === link.href;
+              const isActive = pathname === link.href || (pathname === "/" && link.href === "/");
               return (
                 <Link
                   key={link.name}
                   href={link.href}
+                  onClick={(link as any).onClick}
                   className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold transition-all ${
                     isActive
                       ? "bg-[#E67E22] text-white shadow-sm"
@@ -109,9 +124,8 @@ export function TopNav() {
     <header className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-50">
       {/* Logo */}
       <div className="flex items-center gap-2">
-        <Link href="/" className="flex text-black font-black text-xl tracking-widest items-center">
-          <span className="material-symbols-outlined text-primary mr-1" style={{ fontVariationSettings: "'FILL' 1" }}>public</span>
-          WANDR
+        <Link href="/" className="flex items-center">
+          <img src="/assets/logo.png" alt="WANDR" className="h-8 w-auto object-contain" />
         </Link>
       </div>
 
@@ -123,6 +137,7 @@ export function TopNav() {
             <Link
               key={link.name}
               href={link.href}
+              onClick={(link as any).onClick}
               className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
                 isActive
                   ? "bg-white text-black shadow-sm"

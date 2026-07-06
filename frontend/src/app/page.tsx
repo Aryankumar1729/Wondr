@@ -143,8 +143,11 @@ export default function Home() {
                   data.result.data?.days?.forEach((d: any) => {
                     d.activities?.forEach((a: any) => {
                       if (a.place_details?.location) {
-                        const loc = { lat: a.place_details.location.latitude, lng: a.place_details.location.longitude };
-                        markers.push({ ...loc, title: a.place_details.name });
+                        const lat = Number(a.place_details.location.latitude);
+                        const lng = Number(a.place_details.location.longitude);
+                        if (!isNaN(lat) && !isNaN(lng)) {
+                          markers.push({ lat, lng, title: a.place_details.name });
+                        }
                       }
                     });
                   });

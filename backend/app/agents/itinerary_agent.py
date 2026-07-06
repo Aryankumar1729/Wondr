@@ -5,11 +5,12 @@ from google.genai import types
 from app.config import settings
 from app.agents.base_agent import ADKAgent, A2AMessage
 from app.providers.places_provider import PlacesProvider
+from app.services.holiday_service import holiday_service
 
 class ItineraryAgent(ADKAgent):
     def __init__(self):
         super().__init__("ItineraryAgent")
-        self.places_provider = PlacesProvider()
+        self.places = PlacesProvider()
         # Initialize Gemini via ADK / GenAI SDK
         self.gemini_client = genai.Client(api_key=settings.gemini_api_key) if settings.gemini_api_key else None
 
@@ -49,11 +50,28 @@ class ItineraryAgent(ADKAgent):
                     ]
                 }}""" for i in range(1, duration + 1)])
 
+        # Fetch holiday warnings
+        holiday_context = ""
+        if forecast_list:
+            start_date = forecast_list[0].get("date")
+            end_date = forecast_list[-1].get("date")
+            if start_date and end_date:
+                try:
+                    loop = asyncio.get_running_loop()
+                    holiday_warnings = await loop.run_in_executor(
+                        None, holiday_service.get_holiday_warnings, destination, start_date, end_date
+                    )
+                    if holiday_warnings:
+                        holiday_context = "\nPUBLIC HOLIDAY WARNINGS:\n" + "\n".join(holiday_warnings) + "\nAdapt the itinerary to account for closures or crowds during these holidays."
+                except Exception as e:
+                    pass
+
         # Generate agentic itinerary via Gemini
         prompt = f"""
         You are a highly intelligent travel agent planning a {duration}-day itinerary for {destination}.
         Here is the daily weather forecast for the trip:
         {weather_context}
+        {holiday_context}
         
         CRITICAL INSTRUCTIONS:
         1. Adapt the plan to EACH DAY'S weather: if Day 2 is raining/hot, schedule indoor museums, cafes, or malls for Day 2. If Day 3 is clear, schedule outdoor beaches, hikes, or parks for Day 3. You MUST map activities to the specific daily forecast!
@@ -99,87 +117,90 @@ class ItineraryAgent(ADKAgent):
             return response.json()["choices"][0]["message"]["content"]
         
         try:
-            response = await loop.run_in_executor(None, _call_gemini)
-            response_text = response.text
+            response_text = await loop.run_in_executor(None, _call_groq)
+            # Strip markdown backticks if present
+            if response_text.startswith("```"):
+                response_text = response_text.split("```")[1]
+                if response_text.startswith("json"):
+                    response_text = response_text[4:]
+            response_text = response_text.strip()
             itinerary_plan = json.loads(response_text)
         except Exception as e:
-            # Fallback to Groq
-            if settings.groq_api_key:
-                try:
-                    response_text = await loop.run_in_executor(None, _call_groq)
-                    # Strip markdown backticks if present
-                    if response_text.startswith("```"):
-                        response_text = response_text.split("```")[1]
-                        if response_text.startswith("json"):
-                            response_text = response_text[4:]
-                    response_text = response_text.strip()
-                    itinerary_plan = json.loads(response_text)
-                except Exception as groq_err:
-                    return {"status": "error", "agent": self.name, "message": f"Gemini Error: {e} | Groq Error: {groq_err}", "data": {}}
-            else:
-                return {"status": "error", "agent": self.name, "message": f"Gemini Error: {e} (Groq API Key missing for fallback)", "data": {}}
+            # Fallback to Gemini
+            try:
+                response = await loop.run_in_executor(None, _call_gemini)
+                response_text = response.text
+                itinerary_plan = json.loads(response_text)
+            except Exception as gemini_err:
+                return {"status": "error", "agent": self.name, "message": f"Groq Error: {e} | Gemini Error: {gemini_err}", "data": {}}
 
-        # Enrich with real places data via Nominatim + Overpass
+        # Enrich with real places data via Ola Maps
         for day in itinerary_plan.get("days", []):
             prev_location = None
             for activity in day.get("activities", []):
                 query = activity.get("search_query")
                 if query:
-                    places = await self.places_provider.search_places(query)
-                    # Nominatim rate limit: max 1 request per second
-                    await asyncio.sleep(1.1)
+                    async def _get_place_async():
+                        suggs = await self.places.search_places(f"{query} {destination}")
+                        if suggs:
+                            place = suggs[0]
+                            return {
+                                "name": place.get("displayName", {}).get("text", query),
+                                "address": place.get("formattedAddress", ""),
+                                "rating": place.get("rating", 4.0),
+                                "location": {"lat": place.get("location", {}).get("latitude"), "lng": place.get("location", {}).get("longitude")},
+                                "photos": [place.get("photos", [{}])[0].get("name", "")]
+                            }
+                        return None
 
-                    if places:
-                        top_place = places[0]
+                    top_place = await _get_place_async()
+
+                    if top_place:
                         activity["place_details"] = {
-                            "name": top_place.get("displayName", {}).get("text"),
-                            "address": top_place.get("formattedAddress"),
+                            "name": top_place.get("name"),
+                            "address": top_place.get("address"),
                             "rating": top_place.get("rating"),
                             "location": top_place.get("location")
                         }
+                        
                         photos = top_place.get("photos", [])
                         if photos:
-                            photo_url = self.places_provider.get_photo_url(photos[0].get("name"))
-                            # If fallback image was used, try Wikipedia with the original search query
-                            if "unsplash.com" in photo_url and query:
-                                wiki_photo = self.places_provider._get_wikipedia_photo_sync(query)
-                                if wiki_photo:
-                                    photo_url = wiki_photo
-                            activity["place_details"]["photo_url"] = photo_url
+                            activity["place_details"]["photo_url"] = photos[0] if isinstance(photos[0], str) else photos[0].get("url", "")
                         
                         curr_location = top_place.get("location")
                         if prev_location and curr_location:
-                            prev_lat = prev_location.get("latitude", 0)
-                            prev_lng = prev_location.get("longitude", 0)
-                            curr_lat = curr_location.get("latitude", 0)
-                            curr_lng = curr_location.get("longitude", 0)
+                            prev_lat = prev_location.get("lat", 0)
+                            prev_lng = prev_location.get("lng", 0)
+                            curr_lat = curr_location.get("lat", 0)
+                            curr_lng = curr_location.get("lng", 0)
                             if prev_lat and curr_lat:
-                                travel_info = await self.places_provider.get_distance_and_time(
-                                    prev_lat, prev_lng, curr_lat, curr_lng
-                                )
-                                if travel_info:
-                                    activity["travel_info"] = travel_info
+                                travel_info = await self.places.get_distance_and_time(prev_lat, prev_lng, curr_lat, curr_lng)
+                                activity["travel_info"] = {
+                                    "distance": travel_info.get("distance", "N/A"),
+                                    "duration": travel_info.get("duration", "N/A"),
+                                    "mode": "driving",
+                                    "steps": []
+                                }
                         prev_location = curr_location
 
-                        # For MEAL activities, find real nearby restaurants via Overpass
+                        # For MEAL activities, find real nearby restaurants via PlacesProvider
                         if activity.get("type") == "MEAL" and curr_location:
-                            lat = curr_location.get("latitude", 0)
-                            lon = curr_location.get("longitude", 0)
+                            lat = curr_location.get("lat", 0)
+                            lon = curr_location.get("lng", 0)
                             if lat and lon:
-                                alt_places = await self.places_provider.search_nearby(lat, lon, "restaurant", 800)
+                                alt_places = await self.places.search_nearby(lat, lon, "restaurant", 1000)
                                 alternatives = []
-                                # Filter out the main place itself
-                                main_name = top_place.get("displayName", {}).get("text", "").lower()
-                                for alt in alt_places:
+                                main_name = top_place.get("name", "").lower()
+                                for alt in alt_places or []:
                                     alt_name = alt.get("displayName", {}).get("text", "")
                                     if alt_name.lower() != main_name:
                                         alt_data = {
                                             "name": alt_name,
-                                            "rating": alt.get("rating"),
+                                            "rating": alt.get("rating", 4.0),
                                         }
                                         alt_photos = alt.get("photos", [])
                                         if alt_photos:
-                                            alt_data["photo_url"] = self.places_provider.get_photo_url(alt_photos[0].get("name"))
+                                            alt_data["photo_url"] = alt_photos[0] if isinstance(alt_photos[0], str) else alt_photos[0].get("name", "")
                                         alternatives.append(alt_data)
                                     if len(alternatives) >= 3:
                                         break

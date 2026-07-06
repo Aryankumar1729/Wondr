@@ -2,6 +2,7 @@
 
 import { useTripData } from "@/context/TripContext";
 import { useState } from "react";
+import toast from "react-hot-toast";
 
 export default function HotelsPage() {
   const { tripData } = useTripData();
@@ -48,11 +49,17 @@ export default function HotelsPage() {
           </p>
         </div>
         <div className="flex gap-3">
-          <button className="px-4 py-2 rounded-lg border border-outline-variant text-xs font-bold hover:bg-surface-container transition-colors flex items-center gap-2">
+          <button 
+            className="px-4 py-2 rounded-lg border border-outline-variant text-xs font-bold hover:bg-surface-container transition-colors flex items-center gap-2"
+            onClick={() => toast("Sorting coming soon!", { icon: "↕️" })}
+          >
             <span className="material-symbols-outlined text-sm">sort</span>
             Sort
           </button>
-          <button className="px-4 py-2 rounded-lg border border-outline-variant text-xs font-bold hover:bg-surface-container transition-colors flex items-center gap-2">
+          <button 
+            className="px-4 py-2 rounded-lg border border-outline-variant text-xs font-bold hover:bg-surface-container transition-colors flex items-center gap-2"
+            onClick={() => toast("Filtering coming soon!", { icon: "🔍" })}
+          >
             <span className="material-symbols-outlined text-sm">
               filter_list
             </span>
@@ -185,6 +192,17 @@ export default function HotelsPage() {
                     {isSelected ? "Selected" : "Select Hotel"}
                   </button>
                 </div>
+                
+                {/* View Details mock button */}
+                <button 
+                  className="w-full mt-4 bg-primary text-on-primary py-2.5 rounded-lg text-sm font-bold shadow-sm hover:opacity-90 transition-all active:scale-95"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    import("react-hot-toast").then(mod => mod.default.success("Redirecting to booking partner..."));
+                  }}
+                >
+                  View Details
+                </button>
               </div>
             </div>
           );

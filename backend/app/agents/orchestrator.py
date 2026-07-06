@@ -1,6 +1,7 @@
 import asyncio
 import json
 import hashlib
+from datetime import datetime
 from typing import AsyncGenerator
 from app.agents.base_agent import ADKAgent
 from app.agents.flight_agent import FlightAgent
@@ -67,8 +68,13 @@ class OrchestratorAgent(ADKAgent):
             yield yield_and_cache(f"data: {json.dumps({'event': 'agent_running', 'agent': 'ItineraryAgent'})}\n\n")
             yield yield_and_cache(f"data: {json.dumps({'event': 'agent_running', 'agent': 'PackingAgent'})}\n\n")
             
+            # Get duration from payload
+            duration = request_payload.get("duration", 2)
+            dep_date = request_payload.get("date", "")
+            
             phase2_payload = {
                 **request_payload, 
+                "duration": duration,
                 "flights": flight_result, 
                 "hotels": hotel_result,
                 "weather": weather_result
@@ -90,6 +96,61 @@ class OrchestratorAgent(ADKAgent):
 
             # Store in cache after successful completion
             _cache[cache_key] = plan_steps
+            
+            # --- AUTO SAVE TRIP TO DB ---
+            try:
+                from app.db.database import AsyncSessionLocal
+                from app.db.models import TripRecord
+                
+                def safe_int(v, default=1):
+                    try:
+                        return int(v)
+                    except (ValueError, TypeError):
+                        return default
+                        
+                def safe_float(v, default=50000.0):
+                    try:
+                        return float(v)
+                    except (ValueError, TypeError):
+                        return default
+
+                async with AsyncSessionLocal() as session:
+                    # Calculate arrival date for DB
+                    arrival_date_str = ""
+                    try:
+                        d1 = datetime.strptime(request_payload.get("date", ""), "%Y-%m-%d")
+                        import datetime as dt
+                        d2 = d1 + dt.timedelta(days=int(request_payload.get("duration", 2)))
+                        arrival_date_str = d2.strftime("%Y-%m-%d")
+                    except Exception:
+                        pass
+                        
+                    db_trip = TripRecord(
+                        origin=request_payload.get("origin", ""),
+                        destination=request_payload.get("destination", ""),
+                        departure_date=request_payload.get("date", ""),
+                        arrival_date=arrival_date_str,
+                        adults=safe_int(request_payload.get("adults")),
+                        budget=safe_float(request_payload.get("budget")),
+                        trip_data={
+                            "origin": request_payload.get("origin"),
+                            "destination": request_payload.get("destination"),
+                            "departureDate": request_payload.get("date", ""),
+                            "duration": request_payload.get("duration", 2),
+                            "adults": safe_int(request_payload.get("adults")),
+                            "budget": safe_float(request_payload.get("budget")),
+                            "weather": weather_result.get("data") if isinstance(weather_result, dict) else {},
+                            "flights": flight_result.get("data") if isinstance(flight_result, dict) else [],
+                            "hotels": hotel_result.get("data") if isinstance(hotel_result, dict) else [],
+                            "itinerary": itinerary_result.get("data") if isinstance(itinerary_result, dict) else {},
+                            "packing": packing_result.get("data") if isinstance(packing_result, dict) else {},
+                            "budgetResult": budget_result.get("data") if isinstance(budget_result, dict) else {}
+                        }
+                    )
+                    session.add(db_trip)
+                    await session.commit()
+            except Exception as e:
+                print(f"Failed to auto-save trip: {e}")
             
         except Exception as e:
             yield f"data: {json.dumps({'event': 'orchestrator_error', 'message': str(e)})}\n\n"

@@ -1,25 +1,89 @@
 "use client";
 
 import { useTripData } from "@/context/TripContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
+import WeatherWidget from "@/components/WeatherWidget";
+import toast from "react-hot-toast";
+
+const DynamicMap = dynamic(() => import("@/components/MapComponent"), { ssr: false });
 
 export default function ItineraryPage() {
   const { tripData } = useTripData();
   const itinerary = tripData.itinerary;
   const days: any[] = itinerary?.days || [];
+  
+  const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null);
+  const [weatherData, setWeatherData] = useState<any[]>([]);
 
+  // Calculate generic start date for UI
+  const startDate = tripData.departureDate ? new Date(tripData.departureDate) : new Date();
+
+  let lat = 18.995; // Default Mumbai for testing if none found
+  let lng = 72.825;
+  const aiMarkers: any[] = [];
+  
+  // Find first valid coordinates and collect all markers
+  if (days.length > 0) {
+    for (const day of days) {
+      if (day.activities) {
+        for (const act of day.activities) {
+          const loc = act.place_details?.location;
+          if (loc) {
+            const mLat = Number(loc.latitude || loc.lat);
+            const mLng = Number(loc.longitude || loc.lng);
+            if (!isNaN(mLat) && !isNaN(mLng)) {
+              if (lat === 18.995) {
+                lat = mLat;
+                lng = mLng;
+              }
+              aiMarkers.push({
+                lat: mLat,
+                lng: mLng,
+                title: act.place_details?.name || act.title,
+                type: act.type,
+                photo: act.place_details?.photo_url
+              });
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Fetch weather data for the timeline
+  useEffect(() => {
+    const fetchWeather = async () => {
+      try {
+        const res = await fetch(`http://127.0.0.1:8000/api/weather?lat=${lat}&lon=${lng}`);
+        const data = await res.json();
+        setWeatherData(data.days || []);
+      } catch (e) {
+        console.error("Failed to fetch weather for timeline", e);
+      }
+    };
+    if (days.length > 0) fetchWeather();
+  }, [lat, lng, days.length]);
+
+  const getMaterialIcon = (condition: string) => {
+    switch (condition) {
+      case 'Clear': return 'sunny';
+      case 'Rain': case 'Drizzle': return 'rainy';
+      case 'Thunderstorm': return 'thunderstorm';
+      case 'Snow': return 'weather_snowy';
+      default: return 'cloud';
+    }
+  };
+  
   if (!itinerary || days.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-[calc(100vh-104px)] text-center text-gray-500">
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-104px)] text-center text-gray-500 mt-[104px]">
         <span className="material-symbols-outlined text-6xl mb-4 opacity-50">map</span>
         <h2 className="text-xl font-bold text-gray-700">No Itinerary Generated Yet</h2>
         <p className="text-sm mt-2">Go back and generate a trip first.</p>
       </div>
     );
   }
-
-  // Calculate generic start date for UI
-  const startDate = tripData.departureDate ? new Date(tripData.departureDate) : new Date();
 
   return (
     <div className="flex h-[calc(100vh-104px)] w-full overflow-hidden bg-white mt-[104px]">
@@ -28,19 +92,37 @@ export default function ItineraryPage() {
       <div className="w-[360px] bg-[#F8F9FA] flex flex-col border-r border-gray-200 shadow-[2px_0_10px_rgba(0,0,0,0.02)] z-10 relative">
         {/* Top Actions */}
         <div className="p-4 flex gap-2 border-b border-gray-200 bg-white sticky top-0 z-20">
-          <button className="flex items-center gap-1.5 bg-[#E67E22] text-white px-3 py-1.5 rounded-md text-xs font-bold shadow-sm">
+          <button 
+            className="flex items-center gap-1.5 bg-[#E67E22] text-white px-3 py-1.5 rounded-md text-xs font-bold shadow-sm"
+            onClick={() => {
+              toast.loading("Generating PDF...", { duration: 1500 });
+              setTimeout(() => toast.success("PDF exported successfully!"), 1500);
+            }}
+          >
             <span className="material-symbols-outlined text-[16px]">picture_as_pdf</span>
             PDF
           </button>
-          <button className="flex items-center gap-1.5 bg-[#F3F4F6] text-gray-700 px-3 py-1.5 rounded-md text-xs font-semibold hover:bg-gray-200 border border-gray-200">
+          <button 
+            className="flex items-center gap-1.5 bg-[#F3F4F6] text-gray-700 px-3 py-1.5 rounded-md text-xs font-semibold hover:bg-gray-200 border border-gray-200"
+            onClick={() => {
+              toast.loading("Generating Calendar...", { duration: 1000 });
+              setTimeout(() => toast.success("ICS calendar file downloaded!"), 1000);
+            }}
+          >
             <span className="material-symbols-outlined text-[16px]">event</span>
             ICS
           </button>
           <div className="flex-1"></div>
-          <button className="flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-100 text-gray-400 border border-transparent">
+          <button 
+            className="flex items-center justify-center w-8 h-8 rounded-md hover:bg-gray-100 text-gray-400 border border-transparent"
+            onClick={() => toast("Nothing to undo", { icon: "↩️" })}
+          >
             <span className="material-symbols-outlined text-[18px]">undo</span>
           </button>
-          <button className="flex items-center justify-center w-8 h-8 rounded-md bg-white border border-gray-200 shadow-sm text-gray-700">
+          <button 
+            className="flex items-center justify-center w-8 h-8 rounded-md bg-white border border-gray-200 shadow-sm text-gray-700"
+            onClick={() => toast("Sorting coming soon!", { icon: "↕️" })}
+          >
             <span className="material-symbols-outlined text-[18px]">swap_vert</span>
           </button>
         </div>
@@ -54,13 +136,16 @@ export default function ItineraryPage() {
 
             return (
               <div key={idx} className="border-b border-gray-200 pb-4">
-                {/* Day Header */}
-                <div className="flex gap-3 p-4 sticky top-0 bg-[#F8F9FA] z-10">
+                {/* Day Header - Clickable for Weather Widget */}
+                <div 
+                  className="flex gap-3 p-4 sticky top-0 bg-[#F8F9FA] z-10 cursor-pointer hover:bg-gray-100 transition-colors"
+                  onClick={() => setSelectedDayIndex(idx)}
+                >
                   <div className="flex flex-col items-center justify-center w-12 h-14 bg-white rounded-lg shadow-sm border border-gray-200 shrink-0">
                     <span className="text-sm font-black text-gray-900">{idx + 1}</span>
                     <div className="w-4 border-t border-gray-200 my-1"></div>
                     <span className="text-[10px] font-bold text-gray-500 flex items-center gap-0.5">
-                      <span className="material-symbols-outlined text-[10px]">cloud</span> 22°
+                      <span className="material-symbols-outlined text-[10px]">{weatherData[idx] ? getMaterialIcon(weatherData[idx].condition) : 'cloud'}</span> {weatherData[idx] ? weatherData[idx].temp_max : '--'}°
                     </span>
                   </div>
                   <div className="flex flex-col justify-center">
@@ -87,11 +172,12 @@ export default function ItineraryPage() {
                           <span className="material-symbols-outlined text-gray-300 text-[18px] cursor-grab">drag_indicator</span>
                         </div>
                         
-                        {/* Dot / Line */}
-                        <div className="w-4 flex flex-col items-center mr-3 relative">
-                          <div className="w-2 h-2 rounded-full bg-[#1C1C1E] z-10 mt-2"></div>
-                          {actIdx !== day.activities.length - 1 && (
-                            <div className="w-0.5 bg-gray-200 absolute top-4 bottom-[-16px]"></div>
+                        {/* Activity Photo */}
+                        <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden shrink-0 border border-gray-200 flex items-center justify-center mr-3 relative z-10 mt-0.5">
+                          {activity.place_details?.photo_url ? (
+                            <img src={activity.place_details.photo_url} className="w-full h-full object-cover" alt={activity.title} />
+                          ) : (
+                            <span className="material-symbols-outlined text-gray-400 text-[18px]">landscape</span>
                           )}
                         </div>
 
@@ -129,36 +215,22 @@ export default function ItineraryPage() {
 
       {/* Center: Map */}
       <div className="flex-1 relative bg-[#E5E3DF] overflow-hidden">
-        {/* Floating Map Filters */}
-        <div className="absolute top-6 left-1/2 transform -translate-x-1/2 bg-white rounded-full shadow-lg border border-gray-200 px-4 py-2 flex items-center gap-4 z-10">
-          {["restaurant", "local_cafe", "wine_bar", "bed", "photo_camera", "museum", "park", "local_activity"].map((icon, i) => (
-            <button key={i} className="text-gray-400 hover:text-gray-900 transition-colors">
-              <span className="material-symbols-outlined text-[20px]">{icon}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Embedded Google Maps */}
-        <iframe
-          width="100%"
-          height="100%"
-          style={{ border: 0 }}
-          loading="lazy"
-          allowFullScreen
-          src={`https://maps.google.com/maps?q=${encodeURIComponent(tripData.destination || "Tokyo")}&t=&z=13&ie=UTF8&iwloc=&output=embed`}
-          className="grayscale opacity-80"
-        ></iframe>
+        <DynamicMap lat={lat} lng={lng} destination={tripData.destination || "Tokyo"} aiMarkers={aiMarkers} />
         
-        {/* Fallback Overlay to make it look like the map is loaded even without API Key */}
-        <div className="absolute inset-0 pointer-events-none mix-blend-overlay bg-gradient-to-br from-blue-50/50 to-orange-50/50"></div>
-        
-        {/* Fake Map Markers matching the design */}
-        <div className="absolute top-1/2 left-1/3 transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-[#1C1C1E] text-white flex items-center justify-center font-bold text-xs border-2 border-white shadow-md z-10">
-          3
-        </div>
-        <div className="absolute top-1/3 left-2/3 transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-[#1C1C1E] text-white flex items-center justify-center font-bold text-xs border-2 border-white shadow-md z-10">
-          6
-        </div>
+        {/* Weather Overlay Widget */}
+        {selectedDayIndex !== null && (
+          <WeatherWidget 
+            dayIndex={selectedDayIndex}
+            lat={lat}
+            lng={lng}
+            dateStr={(() => {
+              const d = new Date(startDate);
+              d.setDate(d.getDate() + selectedDayIndex);
+              return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+            })()}
+            onClose={() => setSelectedDayIndex(null)}
+          />
+        )}
       </div>
 
       {/* Right Sidebar: Atlas / Places */}

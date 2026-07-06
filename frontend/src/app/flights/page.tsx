@@ -2,6 +2,7 @@
 
 import { useTripData } from "@/context/TripContext";
 import { useState } from "react";
+import toast from "react-hot-toast";
 
 export default function FlightsPage() {
   const { tripData } = useTripData();
@@ -48,11 +49,17 @@ export default function FlightsPage() {
           </p>
         </div>
         <div className="flex gap-3">
-          <button className="px-4 py-2 rounded-lg border border-outline-variant text-xs font-bold hover:bg-surface-container transition-colors flex items-center gap-2">
+          <button 
+            className="px-4 py-2 rounded-lg border border-outline-variant text-xs font-bold hover:bg-surface-container transition-colors flex items-center gap-2"
+            onClick={() => toast("Sorting coming soon!", { icon: "↕️" })}
+          >
             <span className="material-symbols-outlined text-sm">sort</span>
             Sort by Price
           </button>
-          <button className="px-4 py-2 rounded-lg border border-outline-variant text-xs font-bold hover:bg-surface-container transition-colors flex items-center gap-2">
+          <button 
+            className="px-4 py-2 rounded-lg border border-outline-variant text-xs font-bold hover:bg-surface-container transition-colors flex items-center gap-2"
+            onClick={() => toast("Filtering coming soon!", { icon: "🔍" })}
+          >
             <span className="material-symbols-outlined text-sm">
               filter_list
             </span>
@@ -179,6 +186,7 @@ export default function FlightsPage() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
+                        toast.success("Redirecting to booking partner...");
                       }}
                       className="mt-1 px-5 py-2.5 rounded-xl bg-primary text-on-primary text-xs font-bold flex items-center gap-2 transition-all hover:opacity-90 active:scale-95"
                     >
