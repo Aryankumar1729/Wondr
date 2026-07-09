@@ -76,7 +76,8 @@ async def chat_intake(request: ChatIntakeRequest):
             from groq import Groq
             groq_client = Groq(api_key=settings.groq_api_key)
             
-            groq_prompt = f"{prompt}\n\nRETURN STRICTLY VALID JSON MATCHING THE SCHEMA."
+            schema_str = IntakeData.schema_json()
+            groq_prompt = f"{prompt}\n\nRETURN STRICTLY VALID JSON MATCHING THIS EXACT SCHEMA:\n{schema_str}"
             
             response = groq_client.chat.completions.create(
                 model='llama-3.1-70b-versatile',
@@ -102,6 +103,6 @@ async def chat_intake(request: ChatIntakeRequest):
         # Fallback
         return {
             "is_complete": False,
-            "reply_to_user": "I missed that, could you tell me where you'd like to go?",
+            "reply_to_user": f"I hit a snag. The error is: {str(e)}. Could you tell me where you'd like to go?",
             "missing_field": "destination"
         }
