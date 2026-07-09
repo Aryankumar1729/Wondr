@@ -1,34 +1,39 @@
-import smtplib
 import os
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from app.config import settings
+import requests
 import logging
 
 logger = logging.getLogger(__name__)
 
 def send_email(to_email: str, subject: str, body: str):
-    username = settings.smtp_username or os.getenv("gmail_user_id") or os.getenv("GMAIL_USER_ID")
-    password = settings.smtp_password or os.getenv("gmail_password") or os.getenv("GMAIL_PASSWORD")
-
-    if not username or not password:
-        logger.warning(f"SMTP credentials not configured. Skipping email to {to_email}")
+    resend_api_key = os.getenv("RESEND_API_KEY")
+    
+    if not resend_api_key:
+        logger.warning(f"RESEND_API_KEY not configured. Skipping email to {to_email}")
         return False
 
-    msg = MIMEMultipart()
-    msg['From'] = username
-    msg['To'] = to_email
-    msg['Subject'] = subject
+    headers = {
+        "Authorization": f"Bearer {resend_api_key}",
+        "Content-Type": "application/json"
+    }
 
-    msg.attach(MIMEText(body, 'html'))
+    # Resend provides a free testing domain for sending emails
+    payload = {
+        "from": "Wandr Travel <onboarding@resend.dev>",
+        "to": [to_email],
+        "subject": subject,
+        "html": body
+    }
 
     try:
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(username, password)
-        server.send_message(msg)
-        server.quit()
-        logger.info(f"Email sent successfully to {to_email}")
+        # Use standard HTTP POST on port 443, easily bypassing Render's SMTP firewall
+        response = requests.post("https://api.resend.com/emails", json=payload, headers=headers)
+        
+        if not response.ok:
+            error_data = response.json()
+            logger.error(f"Resend API Error: {error_data}")
+            return False
+            
+        logger.info(f"Email sent successfully to {to_email} via Resend")
         return True
     except Exception as e:
         logger.error(f"Failed to send email to {to_email}: {str(e)}")
