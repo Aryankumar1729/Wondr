@@ -61,28 +61,15 @@ export function TopNav() {
       <div className="fixed top-0 left-0 right-0 z-50 bg-[#F8F9FA]">
         {/* Top Header */}
         <header className="h-14 border-b border-gray-200 flex items-center justify-between px-4">
-          {/* Left: Back & Title */}
-          <div className="flex items-center gap-4">
-            <Link href="/" className="flex items-center gap-1 text-gray-500 hover:text-black font-semibold text-sm transition-colors">
-              <span className="material-symbols-outlined text-[18px]">home</span>
-              Home
+          {/* Left: Logo & Title */}
+          <div className="flex items-center gap-3">
+            <Link href="/trips" className="flex items-center transition-transform hover:scale-105">
+              <img src="/assets/logo.png" alt="WANDR" className="h-10 w-auto object-contain" />
             </Link>
-            <div className="w-px h-4 bg-gray-300"></div>
-            <Link href="/trips" className="flex items-center gap-1 text-gray-500 hover:text-black font-semibold text-sm transition-colors">
-              Trips
-            </Link>
-            <Link href="/vacation" className="flex items-center gap-1 text-gray-500 hover:text-black font-semibold text-sm transition-colors">
-              Vacation
-            </Link>
-            <div className="flex items-center gap-2">
-              <Link href="/" className="flex items-center">
-                <img src="/assets/logo.png" alt="WANDR" className="h-10 w-auto object-contain" />
-              </Link>
-              <span className="text-gray-400 font-light mx-1">/</span>
-              <span className="text-gray-800 font-semibold text-sm tracking-wide">
-                {tripData?.destination || "New Trip"}
-              </span>
-            </div>
+            <div className="h-5 w-px bg-gray-300"></div>
+            <span className="text-gray-900 font-bold text-base tracking-wide">
+              {tripData?.destination || "New Trip"}
+            </span>
           </div>
 
           {/* Right Controls */}
