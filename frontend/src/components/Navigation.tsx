@@ -35,7 +35,7 @@ export function TopNav() {
   const globalNavLinks = [
     { name: "My Trips", href: "/trips", icon: "luggage" },
     { name: "Time Off", href: "/vacation", icon: "event_available" },
-    { name: "Plan", href: "/", icon: "explore" },
+    { name: "Plan", href: "/plan", icon: "explore" },
     { name: "Atlas", href: "/itinerary", icon: "public" },
     { name: "Journey", href: "/itinerary", icon: "map" }
   ];
@@ -191,7 +191,7 @@ export function TopNav() {
   }
 
   // Global Header (My Trips, Vacay, Atlas)
-  const isHome = pathname === "/";
+  const isHome = pathname === "/plan";
 
   return (
     <header className={`fixed top-0 left-0 right-0 h-16 flex items-center justify-between px-6 z-50 transition-colors duration-300 ${isHome ? 'bg-transparent border-transparent' : 'bg-white border-b border-gray-200'}`}>
