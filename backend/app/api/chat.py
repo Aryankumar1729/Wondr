@@ -53,6 +53,8 @@ async def chat_intake(request: ChatIntakeRequest):
             role = "User" if msg.role == "user" else "Wandr"
             history_text += f"{role}: {msg.content}\n"
         
+        prompt = f"{SYSTEM_PROMPT}\n\nConversation:\n{history_text}\n\nExtract the data and respond. RETURN STRICTLY VALID JSON."
+        
         # 1. Try Gemini First
         try:
             from google import genai
