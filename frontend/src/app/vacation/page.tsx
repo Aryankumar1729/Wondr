@@ -26,7 +26,7 @@ export default function VacayPage() {
     
     async function fetchData() {
       try {
-        const planRes = await fetch("http://127.0.0.1:8000/api/vacay/plan", {
+        const planRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/vacay/plan`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
         if (!planRes.ok) throw new Error("Failed to load plan");
@@ -38,14 +38,14 @@ export default function VacayPage() {
         const currentUser = planData.users[0]; // Simplification: owner is usually first
         setSelectedUserId(currentUser?.id);
 
-        const entRes = await fetch(`http://127.0.0.1:8000/api/vacay/entries?year=${selectedYear}`, {
+        const entRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/vacay/entries?year=${selectedYear}`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
         const entData = await entRes.json();
         setEntries(entData.entries);
 
         // Fetch user's generated trips to highlight them on the calendar
-        const tripsRes = await fetch("http://127.0.0.1:8000/api/trips/", {
+        const tripsRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/trips/`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
         if (tripsRes.ok) {
@@ -90,7 +90,7 @@ export default function VacayPage() {
     if (exists) setEntries(prev => prev.filter(e => !(e.date === dateStr && e.user_id === selectedUserId)));
     else setEntries(prev => [...prev, { date: dateStr, user_id: selectedUserId }]);
 
-    await fetch("http://127.0.0.1:8000/api/vacay/entries/toggle", {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/vacay/entries/toggle`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
       body: JSON.stringify({ date: dateStr, user_id: selectedUserId })

@@ -36,7 +36,7 @@ export default function WeatherWidget({
   useEffect(() => {
     const fetchWeather = async () => {
       try {
-        const res = await fetch(`http://127.0.0.1:8000/api/weather/?lat=${lat}&lon=${lng}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/weather/?lat=${lat}&lon=${lng}`);
         const data = await res.json();
         
         // Find the closest matching day (mocking it for the prototype if dates don't align exactly)

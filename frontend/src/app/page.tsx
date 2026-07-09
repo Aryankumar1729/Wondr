@@ -63,7 +63,7 @@ export default function Home() {
         messages: [...chatMessages, { role: 'user', content: userMessage }]
       };
 
-      const res = await fetch("http://127.0.0.1:8000/api/chat/intake", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/chat/intake`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -154,7 +154,7 @@ export default function Home() {
     };
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/orchestration/stream", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/orchestration/stream`, {
         method: "POST",
         headers: { 
             "Content-Type": "application/json",
@@ -369,11 +369,11 @@ export default function Home() {
 
         {/* Results Stream */}
         {!loading && (flights.length > 0 || hotels.length > 0) && (
-          <div className="flex flex-col gap-8 animate-slide-up">
+          <div className="flex flex-col gap-8 animate-slide-up bg-white/30 backdrop-blur-2xl p-8 rounded-[32px] border border-white/30 shadow-[0_8px_32px_rgba(0,0,0,0.15)]">
             
             {flights.length > 0 && (
               <div>
-                <h3 className="text-lg font-bold mb-4 text-on-surface">Recommended Flights</h3>
+                <h3 className="text-xl font-black mb-6 text-gray-900 drop-shadow-sm">Recommended Flights</h3>
                 <div className="flex gap-4 overflow-x-auto pb-4">
                   {flights.map((f, i) => (
                     <div key={i} className="min-w-[280px] bg-white p-5 rounded-[24px] shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 border border-outline-variant/30 flex flex-col gap-4">
@@ -400,7 +400,7 @@ export default function Home() {
 
             {hotels.length > 0 && (
               <div>
-                <h3 className="text-lg font-bold mb-4 text-on-surface">Top Hotel Stays</h3>
+                <h3 className="text-xl font-black mb-6 text-gray-900 drop-shadow-sm">Top Hotel Stays</h3>
                 <div className="flex gap-4 overflow-x-auto pb-4">
                   {hotels.map((h, i) => (
                     <div key={i} className="min-w-[300px] max-w-[300px] bg-white rounded-[24px] shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 border border-outline-variant/30 overflow-hidden flex flex-col">
@@ -435,8 +435,8 @@ export default function Home() {
 
         {/* Itinerary Timeline */}
         {!loading && itinerary && (
-          <div className="animate-slide-up mt-4">
-            <h3 className="text-2xl font-bold mb-8 text-on-surface border-b border-outline-variant/30 pb-4">Daily Itinerary</h3>
+          <div className="animate-slide-up mt-4 bg-white/30 backdrop-blur-2xl p-8 rounded-[32px] border border-white/30 shadow-[0_8px_32px_rgba(0,0,0,0.15)]">
+            <h3 className="text-2xl font-black mb-8 text-gray-900 drop-shadow-sm border-b border-gray-900/10 pb-4">Daily Itinerary</h3>
             {itinerary.days?.map((day: any, i: number) => (
               <div key={i} className="mb-12">
                 <div className="flex items-center gap-3 mb-6">

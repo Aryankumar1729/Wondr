@@ -172,7 +172,7 @@ export default function MapComponent({
     const fetchPlaces = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`http://127.0.0.1:8000/api/explore?lat=${lat}&lng=${lng}&category=${selectedCategory}&radius=3000`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/explore?lat=${lat}&lng=${lng}&category=${selectedCategory}&radius=3000`);
         const data = await res.json();
         if (data.status === "success") {
           setExplorePlaces(data.data);

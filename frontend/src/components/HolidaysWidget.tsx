@@ -11,7 +11,7 @@ export default function HolidaysWidget({ destination, startDate, endDate }: { de
     const fetchHolidays = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`http://127.0.0.1:8000/api/logistics/holidays?destination=${encodeURIComponent(destination)}&start_date=${startDate}&end_date=${endDate}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/logistics/holidays?destination=${encodeURIComponent(destination)}&start_date=${startDate}&end_date=${endDate}`);
         const data = await res.json();
         if (data.status === "success") {
           setHolidays(data.data || []);

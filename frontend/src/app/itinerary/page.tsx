@@ -99,7 +99,7 @@ export default function ItineraryPage() {
       
       try {
         const isUrl = searchQuery.startsWith("http");
-        const endpoint = isUrl ? "http://127.0.0.1:8000/api/maps/resolve-url" : "http://127.0.0.1:8000/api/maps/search";
+        const endpoint = isUrl ? `${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/maps/resolve-url` : `${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/maps/search`;
         
         const res = await fetch(endpoint, {
           method: "POST",
@@ -351,7 +351,7 @@ export default function ItineraryPage() {
   useEffect(() => {
     const fetchWeather = async () => {
       try {
-        const res = await fetch(`http://127.0.0.1:8000/api/weather?lat=${lat}&lon=${lng}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/weather?lat=${lat}&lon=${lng}`);
         const data = await res.json();
         setWeatherData(data.days || []);
       } catch (e) {

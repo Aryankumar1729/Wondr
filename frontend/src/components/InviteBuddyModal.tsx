@@ -39,7 +39,7 @@ export default function InviteBuddyModal({ tripId, destination, isOpen, onClose 
       }
       setLoading(true);
       try {
-        const res = await fetch(`http://127.0.0.1:8000/api/users/search?q=${encodeURIComponent(query)}`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/users/search?q=${encodeURIComponent(query)}`, {
           headers: {
             "Authorization": `Bearer ${token}`
           }
@@ -67,7 +67,7 @@ export default function InviteBuddyModal({ tripId, destination, isOpen, onClose 
     setInviting(typeof user === "string" ? 0 : user.id);
     
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/trips/${tripId}/invite`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/trips/${tripId}/invite`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
