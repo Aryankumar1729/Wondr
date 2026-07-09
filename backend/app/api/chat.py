@@ -2,8 +2,7 @@ import json
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 from typing import List, Optional
-from google import genai
-from google.genai import types
+from groq import Groq
 from app.config import settings
 
 router = APIRouter()
@@ -45,27 +44,24 @@ Output strictly in JSON matching the schema."""
 
 @router.post("/intake", response_model=IntakeData)
 async def chat_intake(request: ChatIntakeRequest):
-    client = genai.Client(api_key=settings.gemini_api_key)
-    
-    # Construct history
-    history_text = ""
-    for msg in request.messages:
-        role = "User" if msg.role == "user" else "Wandr"
-        history_text += f"{role}: {msg.content}\n"
-    
-    prompt = f"{SYSTEM_PROMPT}\n\nConversation:\n{history_text}\n\nExtract the data and respond."
-    
-    response = client.models.generate_content(
-        model='gemini-2.5-flash',
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json",
-            response_schema=IntakeData,
-        ),
-    )
-    
     try:
-        data = json.loads(response.text)
+        client = Groq(api_key=settings.groq_api_key)
+        
+        # Construct history
+        history_text = ""
+        for msg in request.messages:
+            role = "User" if msg.role == "user" else "Wandr"
+            history_text += f"{role}: {msg.content}\n"
+        
+        prompt = f"{SYSTEM_PROMPT}\n\nConversation:\n{history_text}\n\nExtract the data and respond. RETURN STRICTLY VALID JSON."
+        
+        response = client.chat.completions.create(
+            model='llama-3.1-70b-versatile',
+            messages=[{"role": "user", "content": prompt}],
+            response_format={"type": "json_object"}
+        )
+        
+        data = json.loads(response.choices[0].message.content)
         
         # Validation layer: Ensure if they say complete, it actually IS complete
         if data.get("is_complete"):
