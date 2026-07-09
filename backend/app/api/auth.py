@@ -58,11 +58,17 @@ async def register(user: UserCreate, db: AsyncSession = Depends(get_db)):
     
     email_body = email_body.replace("{{name}}", user.name).replace("{{otp}}", otp)
     
-    send_email(
+    success = send_email(
         to_email=user.email,
         subject="Your WANDR Verification Code",
         body=email_body
     )
+    
+    if not success:
+        # Rollback the DB since the user can't verify their email
+        await db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to send OTP email. Please check your email server configuration.")
+        
     
     return {"status": "pending_verification", "message": "OTP sent to email"}
 
