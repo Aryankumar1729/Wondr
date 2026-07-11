@@ -36,9 +36,7 @@ export function TopNav() {
   const globalNavLinks = isAuthenticated ? [
     { name: "My Trips", href: "/trips", icon: "luggage" },
     { name: "Time Off", href: "/vacation", icon: "event_available" },
-    { name: "Plan", href: "/plan", icon: "explore" },
-    { name: "Atlas", href: "/itinerary", icon: "public" },
-    { name: "Journey", href: "/itinerary", icon: "map" }
+    { name: "Plan", href: "/plan", icon: "explore" }
   ] : [
     { name: "About", href: "/", icon: "info" }
   ];
