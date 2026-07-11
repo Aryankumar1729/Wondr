@@ -123,7 +123,7 @@ export default function MyTripsDashboard() {
               <p className="text-gray-300 text-sm md:text-base leading-relaxed mb-8 max-w-md">
                 Hand off the heavy lifting to your personal swarm of AI travel agents. We crunch flights, hotels, and itineraries in seconds.
               </p>
-              <Link href="/" className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-gray-900 rounded-full font-bold shadow-[0_0_40px_rgba(255,255,255,0.2)] hover:shadow-[0_0_60px_rgba(255,255,255,0.4)] transition-all hover:scale-105 active:scale-95 duration-200 w-max group/btn">
+              <Link href="/plan" className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-gray-900 rounded-full font-bold shadow-[0_0_40px_rgba(255,255,255,0.2)] hover:shadow-[0_0_60px_rgba(255,255,255,0.4)] transition-all hover:scale-105 active:scale-95 duration-200 w-max group/btn">
                 <span className="material-symbols-outlined text-[20px] group-hover/btn:rotate-12 transition-transform duration-300 text-primary">magic_button</span>
                 Generate Itinerary
               </Link>
