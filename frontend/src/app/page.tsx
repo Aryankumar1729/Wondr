@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, SignInButton } from "@clerk/nextjs";
 
 export default function AboutPage() {
   const { isSignedIn } = useAuth();
@@ -44,9 +44,17 @@ export default function AboutPage() {
                 <span className="material-symbols-outlined">arrow_back</span> Back to My Trips
               </Link>
             )}
-            <Link href="/plan" className="px-8 py-4 bg-[#E67E22] text-white font-bold rounded-full text-lg shadow-[0_8px_20px_rgba(230,126,34,0.3)] hover:-translate-y-1 hover:shadow-[0_12px_24px_rgba(230,126,34,0.4)] transition-all flex items-center gap-2">
-              Start Planning Now <span className="material-symbols-outlined">arrow_forward</span>
-            </Link>
+            {isSignedIn ? (
+              <Link href="/plan" className="px-8 py-4 bg-[#E67E22] text-white font-bold rounded-full text-lg shadow-[0_8px_20px_rgba(230,126,34,0.3)] hover:-translate-y-1 hover:shadow-[0_12px_24px_rgba(230,126,34,0.4)] transition-all flex items-center gap-2">
+                Start Planning Now <span className="material-symbols-outlined">arrow_forward</span>
+              </Link>
+            ) : (
+              <SignInButton mode="modal" forceRedirectUrl="/plan" fallbackRedirectUrl="/plan" signUpForceRedirectUrl="/plan" signUpFallbackRedirectUrl="/plan">
+                <button className="px-8 py-4 bg-[#E67E22] text-white font-bold rounded-full text-lg shadow-[0_8px_20px_rgba(230,126,34,0.3)] hover:-translate-y-1 hover:shadow-[0_12px_24px_rgba(230,126,34,0.4)] transition-all flex items-center gap-2">
+                  Start Planning Now <span className="material-symbols-outlined">arrow_forward</span>
+                </button>
+              </SignInButton>
+            )}
           </div>
         </div>
 
