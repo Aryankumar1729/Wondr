@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useMemo, useState, ReactNode } from "react";
 
 interface TripData {
+  id: number | null;
   origin: string;
   destination: string;
   departureDate: string;
@@ -27,6 +28,7 @@ interface TripContextType {
 }
 
 const defaultTrip: TripData = {
+  id: null,
   origin: "",
   destination: "",
   departureDate: "",

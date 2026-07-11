@@ -27,6 +27,7 @@ class TripRecord(Base):
     arrival_date = Column(String)
     adults = Column(Integer)
     budget = Column(Float)
+    is_archived = Column(Boolean, default=False)
     
     # Store the entire complex nested structure as JSON
     trip_data = Column(JSON)
@@ -99,3 +100,33 @@ class VacayHolidayCalendar(Base):
     label = Column(String)
     color = Column(String)
     sort_order = Column(Integer)
+
+class TripFile(Base):
+    __tablename__ = "trip_files"
+
+    id = Column(Integer, primary_key=True, index=True)
+    trip_id = Column(Integer, ForeignKey("trips.id"))
+    uploaded_by_user_id = Column(Integer, ForeignKey("users.id"))
+    storage_key = Column(String, index=True)
+    original_name = Column(String)
+    file_size = Column(Integer)
+    mime_type = Column(String)
+    description = Column(String, nullable=True)
+    starred = Column(Boolean, default=False)
+    
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    trip = relationship("TripRecord")
+    uploader = relationship("User")
+    links = relationship("FileLink", back_populates="file", cascade="all, delete-orphan")
+
+class FileLink(Base):
+    __tablename__ = "file_links"
+
+    id = Column(Integer, primary_key=True, index=True)
+    file_id = Column(Integer, ForeignKey("trip_files.id"))
+    place_id = Column(String, nullable=True)
+    reservation_id = Column(String, nullable=True)
+
+    file = relationship("TripFile", back_populates="links")

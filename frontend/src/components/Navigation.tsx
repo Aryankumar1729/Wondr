@@ -11,13 +11,8 @@ import { SignInButton, Show, UserButton } from "@clerk/nextjs";
 export function TopNav() {
   const pathname = usePathname();
   const { tripData } = useTripData();
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const { isAuthenticated } = useCustomAuth(); // Note: This will be replaced by Clerk later
   const [profileOpen, setProfileOpen] = useState(false);
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", isDarkMode);
-  }, [isDarkMode]);
 
   // Hide TopNav completely on auth pages
   if (pathname === "/login" || pathname === "/signup") {
@@ -41,7 +36,7 @@ export function TopNav() {
     { name: "About", href: "/", icon: "info" }
   ];
 
-  const isTripView = ["/itinerary", "/flights", "/hotels", "/budget", "/lists", "/logistics"].includes(pathname);
+  const isTripView = ["/itinerary", "/flights", "/hotels", "/budget", "/lists", "/logistics", "/files"].includes(pathname);
 
   // When inside a trip view, render the specific trip header and subheader
   if (isTripView) {
@@ -52,8 +47,7 @@ export function TopNav() {
       { name: "Logistics", href: "/logistics", icon: "local_shipping" },
       { name: "Lists", href: "/lists", icon: "list_alt" },
       { name: "Costs", href: "/budget", icon: "payments" },
-      { name: "Files", href: "/lists", icon: "folder" },
-      { name: "Collab", href: "/trips", icon: "group" }
+      { name: "Files", href: "/files", icon: "folder" }
     ];
 
     return (
@@ -79,14 +73,6 @@ export function TopNav() {
             >
               <span className="material-symbols-outlined text-[16px]">group_add</span>
               Share
-            </button>
-            <button 
-              className="material-symbols-outlined text-[20px] hover:text-black transition-colors ml-2"
-              onClick={() => setIsDarkMode((current) => !current)}
-              aria-pressed={isDarkMode}
-              title={isDarkMode ? "Disable dark mode" : "Enable dark mode"}
-            >
-              {isDarkMode ? "light_mode" : "dark_mode"}
             </button>
             <button 
               className="material-symbols-outlined text-[20px] hover:text-black transition-colors"
@@ -184,14 +170,6 @@ export function TopNav() {
 
       {/* Right Controls */}
       <div className={`flex items-center gap-4 transition-colors ${isHome ? 'text-white/90' : 'text-gray-500'}`}>
-        <button
-          className={`material-symbols-outlined text-[20px] transition-colors ${isHome ? 'hover:text-white' : 'hover:text-black'}`}
-          onClick={() => setIsDarkMode((current) => !current)}
-          aria-pressed={isDarkMode}
-          title={isDarkMode ? "Disable dark mode" : "Enable dark mode"}
-        >
-          {isDarkMode ? "light_mode" : "dark_mode"}
-        </button>
         <button
           className={`material-symbols-outlined text-[20px] transition-colors ${isHome ? 'hover:text-white' : 'hover:text-black'}`}
           onClick={() => toast.success(tripData?.destination ? `${tripData.destination} trip is loaded.` : "No active trip loaded.")}

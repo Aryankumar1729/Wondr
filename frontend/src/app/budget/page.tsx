@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTripData } from "@/context/TripContext";
 import toast from "react-hot-toast";
 import { ArrowDownToLine, ArrowUpToLine, BarChart3, Plus, Trash2, Users } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 type Participant = { id: string; name: string; color: string };
 type Split = { participantId: string; amount: number };
@@ -23,7 +24,8 @@ const makeId = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
 export default function BudgetPage() {
   const { tripData, setTripData } = useTripData();
-  const [participants, setParticipants] = useState<Participant[]>(() =>
+  const { user, token } = useAuth();
+  const [participants, setParticipants] = useState<any[]>(() =>
     tripData.participants?.length
       ? tripData.participants
       : [
@@ -82,15 +84,17 @@ export default function BudgetPage() {
       balance: (paid[participant.id] || 0) - (owed[participant.id] || 0),
     }));
 
+    const myParticipant = balances.find((item) => item.id === "you" || (user && item.email && user.email && item.email === user.email));
+
     return {
       paid,
       owed,
       balances,
       totalSpent: expenses.reduce((sum, expense) => sum + expense.amount, 0),
-      youOwe: Math.max(0, -(balances.find((item) => item.id === "you")?.balance || 0)),
-      youAreOwed: Math.max(0, balances.find((item) => item.id === "you")?.balance || 0),
+      youOwe: Math.max(0, -(myParticipant?.balance || 0)),
+      youAreOwed: Math.max(0, myParticipant?.balance || 0),
     };
-  }, [expenses, participants]);
+  }, [expenses, participants, user]);
 
   const settlements = useMemo(() => {
     const creditors = totals.balances.filter((item) => item.balance > 0).sort((left, right) => right.balance - left.balance);
@@ -122,13 +126,71 @@ export default function BudgetPage() {
   const addParticipant = () => {
     const name = participantName.trim();
     if (!name) return;
-    const id = makeId();
-    setParticipants((current) => [
-      ...current,
-      { id, name, color: participantColors[current.length % participantColors.length] },
-    ]);
+    
+    setParticipants((current) => {
+      if (current.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+        toast.error(`${name} is already added`);
+        return current;
+      }
+      const id = makeId();
+      toast.success(`Added ${name}`);
+      return [
+        ...current,
+        { id, name, color: participantColors[current.length % participantColors.length] },
+      ];
+    });
     setParticipantName("");
-    toast.success(`Added ${name}`);
+  };
+
+  const removeParticipant = async (participantId: string) => {
+    // Determine if it's the current user or owner (don't allow removing owner from here easily, or handle it via API)
+    const target = participants.find(p => p.id === participantId);
+    if (!target) return;
+    
+    if (target.role === "owner" || target.id === "you" || (user && target.email === user.email)) {
+      toast.error("You cannot remove the trip owner or yourself here.");
+      return;
+    }
+
+    // If it's a numeric ID (backend member), try to remove via API
+    if (!isNaN(Number(participantId)) && tripData?.id) {
+      if (!confirm(`Are you sure you want to remove ${target.name} from the trip entirely?`)) return;
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/trips/${tripData.id}/members/${participantId}`, {
+          method: "DELETE",
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          toast.error(data.detail || "Failed to remove member");
+          return; 
+        }
+      } catch (err) {
+        toast.error("Failed to remove member");
+        return;
+      }
+    }
+    
+    // Remove from local state
+    setParticipants(current => current.filter(p => p.id !== participantId));
+    
+    // Also remove them from any expenses where they are the payer, or splits
+    setExpenses(current => current.map(expense => {
+      const remainingParticipants = participants.filter(p => p.id !== participantId);
+      const newPayerId = expense.payerId === participantId 
+        ? (remainingParticipants[0]?.id || "you")
+        : expense.payerId;
+        
+      const newSplits = expense.splits.filter(s => s.participantId !== participantId);
+      
+      return {
+        ...expense,
+        payerId: newPayerId,
+        splits: newSplits
+      };
+    }));
+    
+    toast.success(`${target.name} removed`);
   };
 
   const addExpense = () => {
@@ -254,12 +316,29 @@ export default function BudgetPage() {
                     <div className={`w-8 h-8 rounded-full ${participant.color} text-white flex items-center justify-center text-xs font-bold`}>{participant.name.slice(0, 1).toUpperCase()}</div>
                     <div>
                       <p className="text-sm font-bold text-gray-900">{participant.name}</p>
-                      <p className="text-[11px] text-gray-500">{participant.id === "you" ? "You" : "Trip member"}</p>
+                      <p className="text-[11px] text-gray-500">
+                        {participant.id === "you" || (user && participant.email && user.email && participant.email === user.email) 
+                          ? "You" 
+                          : participant.role === "owner" 
+                            ? "Trip owner" 
+                            : "Trip member"}
+                      </p>
                     </div>
                   </div>
-                  <span className={`text-sm font-bold ${balance < 0 ? "text-red-500" : balance > 0 ? "text-emerald-500" : "text-gray-500"}`}>
-                    {balance < 0 ? "-" : balance > 0 ? "+" : ""}{Math.abs(balance).toFixed(2)} €
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className={`text-sm font-bold ${balance < 0 ? "text-red-500" : balance > 0 ? "text-emerald-500" : "text-gray-500"}`}>
+                      {balance < 0 ? "-" : balance > 0 ? "+" : ""}{Math.abs(balance).toFixed(2)} €
+                    </span>
+                    {participant.id !== "you" && !(user && participant.email === user.email) && participant.role !== "owner" && (
+                      <button 
+                        onClick={() => removeParticipant(participant.id)}
+                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                        title="Remove person"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </div>
                 </div>
               );
             })}

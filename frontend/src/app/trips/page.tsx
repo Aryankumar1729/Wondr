@@ -14,6 +14,7 @@ export default function MyTripsDashboard() {
   const [loading, setLoading] = useState(true);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [activeTrip, setActiveTrip] = useState<{ id: number; destination: string } | null>(null);
+  const [activeTab, setActiveTab] = useState<"Planned" | "Completed" | "Archived">("Planned");
   const router = useRouter();
   const { setTripData } = useTripData();
   const { token, isAuthenticated } = useAuth();
@@ -47,7 +48,7 @@ export default function MyTripsDashboard() {
 
   const loadTrip = (trip: any) => {
     if (trip.trip_data) {
-      setTripData(trip.trip_data);
+      setTripData({ ...trip.trip_data, id: trip.id });
       router.push("/itinerary");
     }
   };
@@ -56,6 +57,37 @@ export default function MyTripsDashboard() {
     e.stopPropagation();
     setActiveTrip({ id: tripId, destination });
     setInviteModalOpen(true);
+  };
+
+  const handleDelete = async (e: React.MouseEvent, tripId: number) => {
+    e.stopPropagation();
+    if (!confirm("Are you sure you want to permanently delete this trip?")) return;
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/trips/${tripId}`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setTrips(trips.filter(t => t.id !== tripId));
+      }
+    } catch (err) {}
+  };
+
+  const handleArchive = async (e: React.MouseEvent, tripId: number, is_archived: boolean) => {
+    e.stopPropagation();
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/trips/${tripId}/archive`, {
+        method: "PATCH",
+        headers: { 
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ is_archived })
+      });
+      if (res.ok) {
+        setTrips(trips.map(t => t.id === tripId ? { ...t, is_archived } : t));
+      }
+    } catch (err) {}
   };
 
   const colors = [
@@ -214,9 +246,9 @@ export default function MyTripsDashboard() {
             
             <div className="flex items-center gap-6">
               <div className="flex bg-[#f9f9f9] border border-gray-200 rounded-full p-1 shadow-sm hidden md:flex">
-                <button className="px-5 py-1.5 rounded-full bg-white text-gray-900 font-semibold text-sm shadow-sm">Planned</button>
-                <button className="px-5 py-1.5 rounded-full text-gray-500 hover:text-gray-900 font-semibold text-sm transition-colors">Archived</button>
-                <button className="px-5 py-1.5 rounded-full text-gray-500 hover:text-gray-900 font-semibold text-sm transition-colors">Completed</button>
+                <button onClick={() => setActiveTab("Planned")} className={`px-5 py-1.5 rounded-full font-semibold text-sm transition-colors ${activeTab === 'Planned' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}>Planned</button>
+                <button onClick={() => setActiveTab("Completed")} className={`px-5 py-1.5 rounded-full font-semibold text-sm transition-colors ${activeTab === 'Completed' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}>Completed</button>
+                <button onClick={() => setActiveTab("Archived")} className={`px-5 py-1.5 rounded-full font-semibold text-sm transition-colors ${activeTab === 'Archived' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}>Archived</button>
               </div>
               <div className="flex items-center gap-3 text-gray-400">
                 <Link 
@@ -239,7 +271,27 @@ export default function MyTripsDashboard() {
           <div className="grid grid-cols-2 gap-6">
               
               {/* Real Trips from DB */}
-              {trips.map((trip, idx) => {
+              {(() => {
+                const now = new Date();
+                const filteredTrips = trips.filter(trip => {
+                  const arrDate = new Date(trip.arrival_date);
+                  if (activeTab === "Archived") return trip.is_archived;
+                  if (trip.is_archived) return false;
+                  if (activeTab === "Planned") return arrDate >= now;
+                  if (activeTab === "Completed") return arrDate < now;
+                  return true;
+                });
+                
+                if (filteredTrips.length === 0) {
+                  return (
+                    <div className="col-span-2 py-16 text-center text-gray-400 border-2 border-dashed border-gray-200 rounded-[24px]">
+                      <span className="material-symbols-outlined text-4xl mb-2">luggage</span>
+                      <p>No trips found in this category.</p>
+                    </div>
+                  );
+                }
+                
+                return filteredTrips.map((trip, idx) => {
                 const bgGradient = colors[idx % colors.length];
                 const depDate = new Date(trip.departure_date);
                 const arrDate = new Date(trip.arrival_date);
@@ -260,15 +312,30 @@ export default function MyTripsDashboard() {
                         <div className="w-1.5 h-1.5 rounded-full bg-yellow-300"></div>
                         <span className="text-[10px] font-bold text-white tracking-widest">{inDaysText}</span>
                       </div>
-                      
-                      {/* Share / Add Buddy Button */}
-                      <button 
-                        onClick={(e) => openInviteModal(e, trip.id, trip.destination)}
-                        className="absolute top-4 right-4 w-10 h-10 bg-white/20 backdrop-blur-md hover:bg-white/40 border border-white/30 rounded-full flex items-center justify-center transition-colors text-white shadow-sm z-20"
-                        title="Invite Buddy"
-                      >
-                        <span className="material-symbols-outlined text-[20px]">person_add</span>
-                      </button>
+                      {/* Hover Actions & Add Buddy */}
+                      <div className="absolute top-4 right-4 flex items-center gap-2 z-20">
+                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          {activeTab === "Archived" ? (
+                            <button onClick={(e) => handleArchive(e, trip.id, false)} className="w-10 h-10 bg-white/20 backdrop-blur-md hover:bg-white/40 border border-white/30 rounded-full flex items-center justify-center text-white shadow-sm transition-colors" title="Unarchive Trip">
+                              <span className="material-symbols-outlined text-[18px]">unarchive</span>
+                            </button>
+                          ) : (
+                            <button onClick={(e) => handleArchive(e, trip.id, true)} className="w-10 h-10 bg-white/20 backdrop-blur-md hover:bg-white/40 border border-white/30 rounded-full flex items-center justify-center text-white shadow-sm transition-colors" title="Archive Trip">
+                              <span className="material-symbols-outlined text-[18px]">archive</span>
+                            </button>
+                          )}
+                          <button onClick={(e) => handleDelete(e, trip.id)} className="w-10 h-10 bg-red-500/20 backdrop-blur-md hover:bg-red-500/40 border border-red-500/30 rounded-full flex items-center justify-center text-white shadow-sm transition-colors" title="Delete Trip">
+                            <span className="material-symbols-outlined text-[18px]">delete</span>
+                          </button>
+                        </div>
+                        <button 
+                          onClick={(e) => openInviteModal(e, trip.id, trip.destination)}
+                          className="w-10 h-10 bg-white/20 backdrop-blur-md hover:bg-white/40 border border-white/30 rounded-full flex items-center justify-center transition-colors text-white shadow-sm"
+                          title="Invite Buddy"
+                        >
+                          <span className="material-symbols-outlined text-[20px]">person_add</span>
+                        </button>
+                      </div>
 
                       <h3 className="text-3xl font-bold text-white leading-tight tracking-tight shadow-sm z-10 w-3/4">
                         {trip.destination}
@@ -305,7 +372,8 @@ export default function MyTripsDashboard() {
                     </div>
                   </div>
                 );
-              })}
+              });
+            })()}
             </div>
         </div>
       </div>

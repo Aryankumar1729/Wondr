@@ -3,6 +3,8 @@ from fastapi.security import OAuth2PasswordBearer
 import jwt
 import os
 import base64
+import ssl
+import certifi
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from app.db.database import get_db
@@ -26,7 +28,8 @@ def get_jwks_url():
     return None
 
 jwks_url = get_jwks_url()
-jwks_client = jwt.PyJWKClient(jwks_url) if jwks_url else None
+ssl_context = ssl.create_default_context(cafile=certifi.where())
+jwks_client = jwt.PyJWKClient(jwks_url, ssl_context=ssl_context) if jwks_url else None
 
 _clerk_id_to_email = {}
 
