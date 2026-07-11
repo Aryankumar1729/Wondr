@@ -106,7 +106,7 @@ export function TopNav() {
                 </SignInButton>
               </Show>
               <Show when="signed-in">
-                <UserButton afterSignOutUrl="/" appearance={{ elements: { userButtonAvatarBox: "w-8 h-8" } }}>
+                <UserButton appearance={{ elements: { userButtonAvatarBox: "w-8 h-8" } }}>
                   <UserButton.MenuItems>
                     <UserButton.Link
                       label="About"
@@ -210,7 +210,7 @@ export function TopNav() {
                 </SignInButton>
               </Show>
               <Show when="signed-in">
-                <UserButton afterSignOutUrl="/" appearance={{ elements: { userButtonAvatarBox: "w-8 h-8" } }}>
+                <UserButton appearance={{ elements: { userButtonAvatarBox: "w-8 h-8" } }}>
                   <UserButton.MenuItems>
                     <UserButton.Link
                       label="About"
