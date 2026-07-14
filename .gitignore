@@ -18,3 +18,10 @@ __pycache__/
 # Logs
 *.log
 .agents/
+
+# Databases
+*.db
+*.sqlite3
+
+# macOS
+.DS_Store
