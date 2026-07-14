@@ -6,15 +6,15 @@ WANDR is a next-generation AI-powered travel planner that helps you effortlessly
 
 | Dashboard | AI Itinerary |
 | :---: | :---: |
-| ![Dashboard](DASHBOARD.png) | ![AI Itinerary](ITINERARY.png) |
+| ![Dashboard](screenshots/DASHBOARD.png) | ![AI Itinerary](screenshots/ITINERARY.png) |
 
 | Cost Splitting | WANDR AI |
 | :---: | :---: |
-| ![Cost Splitting](COST_SPLIT.png) | ![WANDR AI](WANDR_AI.png) |
+| ![Cost Splitting](screenshots/COST_SPLIT.png) | ![WANDR AI](screenshots/WANDR_AI.png) |
 
 | Travel Calendar | Weather & Info |
 | :---: | :---: |
-| ![Travel Calendar](TRAVEL_CALENDAR.png) | ![Weather](WEATHER.png) |
+| ![Travel Calendar](screenshots/TRAVEL_CALENDAR.png) | ![Weather](screenshots/WEATHER.png) |
 
 ## Features
 
